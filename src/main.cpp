@@ -1,11 +1,13 @@
-#include "ncbind.hpp"
+#include "ncbind/ncbind.hpp"
 #include "layerExBase.hpp"
 #include <stdio.h>
 #include <process.h>
 #include "KThreadPool.h"
 
 
+#if 0
 #define USE_SSE2		// SSE2を使う
+#endif
 #define MULTI_THREAD	// マルチスレッドにする
 
 
@@ -997,8 +999,8 @@ public:
 #else
 		int dstwidth = p->dstwidth;				// マクロらしいので変数に代入しとく
 		int map1w_x4 = map1width*4;
-		int map1lw   = min(map1x, p->dstwidth);						// 左側の描画幅端数
-		int map1ccnt = max(0, (p->dstwidth - map1lw))/map1width;	// 中央の描画繰返回数
+		int map1lw   = std::min(map1x, p->dstwidth);						// 左側の描画幅端数
+		int map1ccnt = std::max(0, (p->dstwidth - map1lw))/map1width;	// 中央の描画繰返回数
 		int map1rw   = p->dstwidth - map1lw - map1ccnt*map1width;	// 右端の描画幅端数
 //log(L"map1lw = %d, map1ccnt = %d, map1rw = %d", map1lw, map1ccnt, map1rw);
 		for (int y = p->starty; y < p->dstheight; y++) {
@@ -1237,8 +1239,8 @@ public:
 			}
 		} else {
 			// 4dot 単位ではない場合
-			int map1lw = min(map1x, p->dstwidth);	// map1左端の描画幅端数
-			int map2lw = min(map2x, p->dstwidth);	// map2左端の描画幅端数
+			int map1lw = std::min(map1x, p->dstwidth);	// map1左端の描画幅端数
+			int map2lw = std::min(map2x, p->dstwidth);	// map2左端の描画幅端数
 			if (map1lw == 0)
 				map1lw = map1width;
 			if (map2lw == 0)

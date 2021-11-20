@@ -114,7 +114,7 @@ void KThreadPool<T>::setThreadNum(int num=0)
 		GetSystemInfo(&sysinfo);
 		num = sysinfo.dwNumberOfProcessors;
 	}
-	int newthreadnum = min(MAXKTHREADNUM-1, num-1); // -1 は自分を含むため
+	int newthreadnum = std::min(MAXKTHREADNUM-1, num-1); // -1 は自分を含むため
 	if (newthreadnum < 0)
 		newthreadnum = 0; // 自分を除くので0はありうる
 
