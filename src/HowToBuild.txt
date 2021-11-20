@@ -1,52 +1,52 @@
-LayerExShimmer‚ÌBuild•û–@ on VC++ 2008/2010
+LayerExShimmerã®Buildæ–¹æ³• on VC++ 2008/2010
 
-1. [ƒtƒ@ƒCƒ‹]¨[V‹Kì¬]¨[ƒvƒƒWƒFƒNƒg]¨
-@[Win32ƒRƒ“ƒ\[ƒ‹ƒAƒvƒŠƒP[ƒVƒ‡ƒ“]‚ÅƒvƒƒWƒFƒNƒgì¬
+1. [ãƒ•ã‚¡ã‚¤ãƒ«]â†’[æ–°è¦ä½œæˆ]â†’[ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆ]â†’
+ã€€[Win32ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³]ã§ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆä½œæˆ
 
-2. ƒEƒBƒU[ƒh‚Å[DLL(D)]A[‹ó‚ÌƒvƒƒWƒFƒNƒg]‚ð‘I‘ð‚µ‚Ä[Š®—¹]
+2. ã‚¦ã‚£ã‚¶ãƒ¼ãƒ‰ã§[DLL(D)]ã€[ç©ºã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆ]ã‚’é¸æŠžã—ã¦[å®Œäº†]
 
-3. ƒ\[ƒXƒtƒ@ƒCƒ‹‚Æƒwƒbƒ_[ƒtƒ@ƒCƒ‹AƒŠƒ\[ƒXƒtƒ@ƒCƒ‹‚ÉˆÈ‰º‚ðƒCƒ“ƒ|[ƒgB
-@@ƒ\[ƒXƒtƒ@ƒCƒ‹F
-	main.cpp ........... •t‘®ƒtƒ@ƒCƒ‹AlayerExShimmerƒƒCƒ“
-	ncbind.cpp ......... ‚ ‚Æ‚Í‘S•”‹g—¢‹g—¢‚Ìƒ\[ƒXƒR[ƒh‚©‚çB
+3. ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã¨ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«ã€ãƒªã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã«ä»¥ä¸‹ã‚’ã‚¤ãƒ³ãƒãƒ¼ãƒˆã€‚
+ã€€ã€€ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ï¼š
+	main.cpp ........... ä»˜å±žãƒ•ã‚¡ã‚¤ãƒ«ã€layerExShimmerãƒ¡ã‚¤ãƒ³
+	ncbind.cpp ......... ã‚ã¨ã¯å…¨éƒ¨å‰é‡Œå‰é‡Œã®ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰ã‹ã‚‰ã€‚
 	tp_stub.cpp
-@@ƒwƒbƒ_[ƒtƒ@ƒCƒ‹F
-	KThreadPool.h ...... •t‘®ƒtƒ@ƒCƒ‹AƒXƒŒƒbƒhƒv[ƒ‹ŽÀ‘•
+ã€€ã€€ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«ï¼š
+	KThreadPool.h ...... ä»˜å±žãƒ•ã‚¡ã‚¤ãƒ«ã€ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«å®Ÿè£…
 	layerExBase.hpp
 	ncb_foreach.h
 	ncb_invoke.hpp
 	ncbind.hpp
 	tp_stub.h
-@@ƒŠƒ\[ƒXƒtƒ@ƒCƒ‹
-	layerExShimmer.rc .. •t‘®ƒtƒ@ƒCƒ‹
+ã€€ã€€ãƒªã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«
+	layerExShimmer.rc .. ä»˜å±žãƒ•ã‚¡ã‚¤ãƒ«
 
-4. ƒvƒƒWƒFƒNƒg‚ÌƒvƒƒpƒeƒBƒ_ƒCƒAƒƒO‚ÅA[C/C++]¨[ƒR[ƒh¶¬]¨
-@[ƒ‰ƒ“ƒ^ƒCƒ€ƒ‰ƒCƒuƒ‰ƒŠ]¨[ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh(/MT)]‚ð‘I‘ð
-	‚±‚ê‚ð‚µ‚È‚¢‚ÆAVC++‚ðƒCƒ“ƒXƒg[ƒ‹‚µ‚Ä‚¢‚È‚¢ŠÂ‹«‚ÅA
-	ŽÀsŽž‚ÉuMSVCR100.dll‚ª‘¶Ý‚µ‚È‚¢v‚Æ‚¢‚¤ƒGƒ‰[‚ªo‚é
+4. ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã§ã€[C/C++]â†’[ã‚³ãƒ¼ãƒ‰ç”Ÿæˆ]â†’
+ã€€[ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ–ãƒ©ãƒª]â†’[ãƒžãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰(/MT)]ã‚’é¸æŠž
+	ã“ã‚Œã‚’ã—ãªã„ã¨ã€VC++ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¦ã„ãªã„ç’°å¢ƒã§ã€
+	å®Ÿè¡Œæ™‚ã«ã€ŒMSVCR100.dllãŒå­˜åœ¨ã—ãªã„ã€ã¨ã„ã†ã‚¨ãƒ©ãƒ¼ãŒå‡ºã‚‹
 
-5. ‚±‚ê‚Å‚â‚Á‚ÆBuildB
+5. ã“ã‚Œã§ã‚„ã£ã¨Buildã€‚
 
 
-Å“K‰»‚Æ‚©
-	‚Æ‚è‚ ‚¦‚¸ƒ‹[ƒv“à‚ÉðŒ•ªŠò‚ª‚ ‚é‚Æ20%‚­‚ç‚¢‚ ‚Á‚Æ‚¢‚¤ŠÔ‚É
-	’x‚­‚È‚Á‚¿‚á‚¤‚Ì‚ÅA‚»‚ê‚ð’Ç‚¢o‚µ‚½Bƒ‹[ƒv“WŠJ‚Ý‚½‚¢‚Å
-	Œ©‰h‚¦‚Æ“ª‚ªˆ«‚­‚ÄƒCƒ„‚È‚ñ‚¾‚¯‚ÇB‚ ‚Æ‚ÍA
-	[ƒvƒƒWƒFƒNƒg]¨[ƒvƒƒpƒeƒB]¨[\¬ƒvƒƒpƒeƒB]¨[C/C++]¨
-	[Å“K‰»]¨[Å“K‰»]‚É[Å‘åŒÀ‚ÌÅ“K‰»(/Ox)]‚ð‘I‘ðB
-	[Å“K‰»]¨[‘¬“x‚Ü‚½‚ÍƒTƒCƒY‚ð—Dæ]‚É[ŽÀs‘¬“x‚ð—Dæ(/Ot)]‚ð‘I‘ðB
-	[ƒR[ƒh¶¬]‚©‚çA[Šg’£–½—ßƒZƒbƒg‚ð—LŒø‚É‚·‚é]‚ÅSSE2‚ð‘I‘ðA
-	[•s“®¬”“_ƒ‚ƒfƒ‹]‚ð[Fast(/fp:fast)]‚É‚·‚é‚Æ‚¿‚å‚Á‚ÆÅ“K‰»
-	‚Å‚«‚é‚©‚àB
-	SSE2‘I‘ð‚·‚é‚ÆPen4‚æ‚è‘O‚ÌÎ‚Å‚Í“®‚©‚È‚­‚È‚é‚¯‚ê‚ÇA‚³‚·‚ª‚É
-	‚à‚¤Žg‚Á‚Ä‚él‚Í‹‚È‚¢‚ñ‚¶‚á‚È‚¢‚©A‚ÆB
-	Žv‚¢—]‚Á‚ÄASSE2‚Î‚è‚Î‚è‚ÉBPen4–¢–ž‚ð‚Î‚Á‚³‚èØ‚èŽÌ‚Ä‚½B
-	‚±‚ê‚ÅŒ»ÝAŒ³‚ÌƒR[ƒh‚Ì4”{‚­‚ç‚¢‚Ì‘¬“x‚Å“®‚­‚æ‚¤‚É‚Í‚È‚Á‚Ä‚¢‚éB
+æœ€é©åŒ–ã¨ã‹
+	ã¨ã‚Šã‚ãˆãšãƒ«ãƒ¼ãƒ—å†…ã«æ¡ä»¶åˆ†å²ãŒã‚ã‚‹ã¨20%ãã‚‰ã„ã‚ã£ã¨ã„ã†é–“ã«
+	é…ããªã£ã¡ã‚ƒã†ã®ã§ã€ãã‚Œã‚’è¿½ã„å‡ºã—ãŸã€‚ãƒ«ãƒ¼ãƒ—å±•é–‹ã¿ãŸã„ã§
+	è¦‹æ „ãˆã¨é ­ãŒæ‚ªãã¦ã‚¤ãƒ¤ãªã‚“ã ã‘ã©ã€‚ã‚ã¨ã¯ã€
+	[ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆ]â†’[ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£]â†’[æ§‹æˆãƒ—ãƒ­ãƒ‘ãƒ†ã‚£]â†’[C/C++]â†’
+	[æœ€é©åŒ–]â†’[æœ€é©åŒ–]ã«[æœ€å¤§é™ã®æœ€é©åŒ–(/Ox)]ã‚’é¸æŠžã€‚
+	[æœ€é©åŒ–]â†’[é€Ÿåº¦ã¾ãŸã¯ã‚µã‚¤ã‚ºã‚’å„ªå…ˆ]ã«[å®Ÿè¡Œé€Ÿåº¦ã‚’å„ªå…ˆ(/Ot)]ã‚’é¸æŠžã€‚
+	[ã‚³ãƒ¼ãƒ‰ç”Ÿæˆ]ã‹ã‚‰ã€[æ‹¡å¼µå‘½ä»¤ã‚»ãƒƒãƒˆã‚’æœ‰åŠ¹ã«ã™ã‚‹]ã§SSE2ã‚’é¸æŠžã€
+	[ä¸å‹•å°æ•°ç‚¹ãƒ¢ãƒ‡ãƒ«]ã‚’[Fast(/fp:fast)]ã«ã™ã‚‹ã¨ã¡ã‚‡ã£ã¨æœ€é©åŒ–
+	ã§ãã‚‹ã‹ã‚‚ã€‚
+	SSE2é¸æŠžã™ã‚‹ã¨Pen4ã‚ˆã‚Šå‰ã®çŸ³ã§ã¯å‹•ã‹ãªããªã‚‹ã‘ã‚Œã©ã€ã•ã™ãŒã«
+	ã‚‚ã†ä½¿ã£ã¦ã‚‹äººã¯å±…ãªã„ã‚“ã˜ã‚ƒãªã„ã‹ã€ã¨ã€‚
+	æ€ã„ä½™ã£ã¦ã€SSE2ã°ã‚Šã°ã‚Šã«ã€‚Pen4æœªæº€ã‚’ã°ã£ã•ã‚Šåˆ‡ã‚Šæ¨ã¦ãŸã€‚
+	ã“ã‚Œã§ç¾åœ¨ã€å…ƒã®ã‚³ãƒ¼ãƒ‰ã®4å€ãã‚‰ã„ã®é€Ÿåº¦ã§å‹•ãã‚ˆã†ã«ã¯ãªã£ã¦ã„ã‚‹ã€‚
 
-	0.3.0.0 ‚©‚çƒ}ƒ‹ƒ`ƒXƒŒƒbƒh‚É‘Î‰ž‚µ‚½BCPU(‚Æ‚¢‚¤‚©Thread)‚ª
-	‚ ‚é‚¾‚¯Ž©“®‚Å’T‚µ‚Ä‘S•”Žg‚¨‚¤‚Æ‚·‚éB
+	0.3.0.0 ã‹ã‚‰ãƒžãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ã«å¯¾å¿œã—ãŸã€‚CPU(ã¨ã„ã†ã‹Thread)ãŒ
+	ã‚ã‚‹ã ã‘è‡ªå‹•ã§æŽ¢ã—ã¦å…¨éƒ¨ä½¿ãŠã†ã¨ã™ã‚‹ã€‚
 
-‚Æ‚±‚ë‚ÅAVC++2008‚Åbuild‚·‚é‚ÆAÅŒã‚ÉulayerEXShimmer.dll ‚ªŽÀs
-‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½v‚Æ‚©“ª‚Ìˆ«‚¢‚±‚Æ‚ðŒ¾‚¤‚ñ‚Å‚·‚ªA‚±‚ê‚ðbuildŒã
-ŽÀs‚µ‚È‚¢‚æ‚¤‚É‚·‚é‚É‚Í‚Ç‚¤‚µ‚½‚ç‚¢‚¢‚ñ‚ÅƒX‚©‚ËB‰ä”yVC++‚Æ‚©–Å‘½‚É
-‚Â‚Â‚©‚ñ‚©‚ç’m‚ç‚ñ‚Ì‚Å‚·B
+ã¨ã“ã‚ã§ã€VC++2008ã§buildã™ã‚‹ã¨ã€æœ€å¾Œã«ã€ŒlayerEXShimmer.dll ãŒå®Ÿè¡Œ
+ã§ãã¾ã›ã‚“ã§ã—ãŸã€ã¨ã‹é ­ã®æ‚ªã„ã“ã¨ã‚’è¨€ã†ã‚“ã§ã™ãŒã€ã“ã‚Œã‚’buildå¾Œ
+å®Ÿè¡Œã—ãªã„ã‚ˆã†ã«ã™ã‚‹ã«ã¯ã©ã†ã—ãŸã‚‰ã„ã„ã‚“ã§ã‚¹ã‹ã­ã€‚æˆ‘è¼©VC++ã¨ã‹æ»…å¤šã«
+ã¤ã¤ã‹ã‚“ã‹ã‚‰çŸ¥ã‚‰ã‚“ã®ã§ã™ã€‚

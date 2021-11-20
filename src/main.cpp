@@ -5,17 +5,17 @@
 #include "KThreadPool.h"
 
 
-#define USE_SSE2		// SSE2‚ğg‚¤
-#define MULTI_THREAD	// ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh‚É‚·‚é
+#define USE_SSE2		// SSE2ã‚’ä½¿ã†
+#define MULTI_THREAD	// ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ã«ã™ã‚‹
 
 
-// ˆêƒhƒbƒg‚ÌŒ^
+// ä¸€ãƒ‰ãƒƒãƒˆã®å‹
 typedef DWORD TJSPIXEL;
-// ˆêƒhƒbƒg‚ÌƒoƒCƒg”
+// ä¸€ãƒ‰ãƒƒãƒˆã®ãƒã‚¤ãƒˆæ•°
 #define TJSPIXELSIZE (sizeof(TJSPIXEL))
 
 /**
- * ƒƒOo—Í—p
+ * ãƒ­ã‚°å‡ºåŠ›ç”¨
  */
 #if 1
 static void log(const tjs_char *format, ...)
@@ -35,27 +35,27 @@ static void log(const tjs_char *format, ...)
 
 
 /*
- * À•W‚©‚çƒoƒbƒtƒ@ƒAƒhƒŒƒX‚ğ‹‚ß‚éƒCƒ“ƒ‰ƒCƒ“ŠÖ”
+ * åº§æ¨™ã‹ã‚‰ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æ±‚ã‚ã‚‹ã‚¤ãƒ³ãƒ©ã‚¤ãƒ³é–¢æ•°
  */
 inline static BYTE* bufadr(BYTE *buf, UINT x, UINT y, UINT pitch)
 {
   return buf + y*pitch + x*TJSPIXELSIZE;
 }
 
-// ƒ}ƒCƒiƒX’l‚àŠÜ‚ßA0‚©‚çmax-1‚Ü‚Å‚ÌŠÔ‚É’l‚ğ‚»‚ë‚¦‚éBƒI[ƒo[ƒtƒ[‚Íƒ‹[ƒv‚·‚é
+// ãƒã‚¤ãƒŠã‚¹å€¤ã‚‚å«ã‚ã€0ã‹ã‚‰max-1ã¾ã§ã®é–“ã«å€¤ã‚’ãã‚ãˆã‚‹ã€‚ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼æ™‚ã¯ãƒ«ãƒ¼ãƒ—ã™ã‚‹
 #define ZERO2MAX(num, max) ((((num)%(max))+(max))%(max))
-// ƒ}ƒCƒiƒX‚àŠÜ‚ßA0‚©‚çmax-1‚Ü‚Å‚ÌŠÔ‚É’l‚ğ‚»‚ë‚¦‚éBƒI[ƒo[ƒtƒ[‚Í0`MAX‚Ü‚Å‚ÌŠÔ‚ÉŠÛ‚ß‚é
+// ãƒã‚¤ãƒŠã‚¹ã‚‚å«ã‚ã€0ã‹ã‚‰max-1ã¾ã§ã®é–“ã«å€¤ã‚’ãã‚ãˆã‚‹ã€‚ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼æ™‚ã¯0ã€œMAXã¾ã§ã®é–“ã«ä¸¸ã‚ã‚‹
 #define ZERO2MAX2(num, max) ((num) < 0 ? 0 : (num) >= (max) ? (max)-1 : (num))
 
 /*
- * À•W‚©‚çƒoƒbƒtƒ@ƒAƒhƒŒƒX‚ğ‹‚ß‚éƒCƒ“ƒ‰ƒCƒ“ŠÖ”(À•Wƒ‹[ƒv”Å)
+ * åº§æ¨™ã‹ã‚‰ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æ±‚ã‚ã‚‹ã‚¤ãƒ³ãƒ©ã‚¤ãƒ³é–¢æ•°(åº§æ¨™ãƒ«ãƒ¼ãƒ—ç‰ˆ)
  */
 inline static BYTE* bufadr2(BYTE *buf, int x, int y, int width, int height, int pitch)
 {
   return buf + ZERO2MAX(y,height)*pitch + ZERO2MAX(x,width)*TJSPIXELSIZE;
 }
 /*
- * À•W‚©‚çƒoƒbƒtƒ@ƒAƒhƒŒƒX‚ğ‹‚ß‚éƒCƒ“ƒ‰ƒCƒ“ŠÖ”(À•WŠÛ‚ß”Å)
+ * åº§æ¨™ã‹ã‚‰ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æ±‚ã‚ã‚‹ã‚¤ãƒ³ãƒ©ã‚¤ãƒ³é–¢æ•°(åº§æ¨™ä¸¸ã‚ç‰ˆ)
  */
 inline static BYTE* bufadr3(BYTE *buf, int x, int y, int width, int height, int pitch)
 {
@@ -64,7 +64,7 @@ inline static BYTE* bufadr3(BYTE *buf, int x, int y, int width, int height, int 
 
 
 /*
- * TJS‚ÌLayerƒNƒ‰ƒX‚Ìƒƒ“ƒo‚ğ“¾‚é
+ * TJSã®Layerã‚¯ãƒ©ã‚¹ã®ãƒ¡ãƒ³ãƒã‚’å¾—ã‚‹
  */
 inline static tTJSVariant getTJSMember(tTJSVariant instance, const wchar_t param[])
 {
@@ -75,25 +75,25 @@ inline static tTJSVariant getTJSMember(tTJSVariant instance, const wchar_t param
 } 
 
 /*
- * ‚©‚°‚ë‚¤Œø‰Ê—pŠÖ” shimmer() ’Ç‰Á
+ * ã‹ã’ã‚ã†åŠ¹æœç”¨é–¢æ•° shimmer() è¿½åŠ 
  */
 class layerExShimmer : public layerExBase
 {
-	KThreadPool<layerExShimmer> threadPool; // ƒXƒŒƒbƒhƒv[ƒ‹(def‚ÅCPU”=Thread”)
+	KThreadPool<layerExShimmer> threadPool; // ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«(defã§CPUæ•°=Threadæ•°)
 
 #ifndef TVPMaxThreadNum
-	static const tjs_int  TVPMaxThreadNum = 8;	// ‚±‚êdll‚©‚ç—˜—p‚Å‚«‚È‚¢‚Ì‚Å’è‹`
+	static const tjs_int  TVPMaxThreadNum = 8;	// ã“ã‚Œdllã‹ã‚‰åˆ©ç”¨ã§ããªã„ã®ã§å®šç¾©
 #endif
-	// ƒXƒŒƒbƒhI—¹‚ğEvent‚Å‘Ò‚Â‚Æd‚¢‚©‚çAƒXƒŒƒbƒh”‚Q‚­‚ç‚¢‚Å“ª‘Å‚¿‚¾‚Á‚½‚Ì‚Å
+	// ã‚¹ãƒ¬ãƒƒãƒ‰çµ‚äº†ã‚’Eventã§å¾…ã¤ã¨é‡ã„ã‹ã‚‰ã€ã‚¹ãƒ¬ãƒƒãƒ‰æ•°ï¼’ãã‚‰ã„ã§é ­æ‰“ã¡ã ã£ãŸã®ã§
 	static const tjs_int MAXTHREADNUM = TVPMaxThreadNum;
 
 public:
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	layerExShimmer(DispatchT obj) : layerExBase(obj)
 	{
 	}
 
-	// threadedShimmer*() ‚É“n‚·ˆø”\‘¢‘Ì
+	// threadedShimmer*() ã«æ¸¡ã™å¼•æ•°æ§‹é€ ä½“
 	typedef struct {
 		BYTE *dstbuf; tjs_int dstwidth, dstheight, dstpitch;
 		BYTE *srcbuf; tjs_int srcwidth, srcheight, srcpitch;
@@ -105,8 +105,8 @@ public:
 	} ShimmerRect;
 
 
-	// ƒ}ƒXƒN‚Ì‚È‚¢shimmer‚Ìƒ}ƒ‹ƒ`ƒXƒŒƒbƒhŠÖ”
-	// srcbuf ‚Ì‰æ‘œ‚ğ mapbuf ‚É]‚Á‚Ä‚ä‚ª‚Ü‚¹‚È‚ª‚ç dstbuf ‚É“\‚è•t‚¯‚é
+	// ãƒã‚¹ã‚¯ã®ãªã„shimmerã®ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰é–¢æ•°
+	// srcbuf ã®ç”»åƒã‚’ mapbuf ã«å¾“ã£ã¦ã‚†ãŒã¾ã›ãªãŒã‚‰ dstbuf ã«è²¼ã‚Šä»˜ã‘ã‚‹
 	void threadedShimmer(LPVOID params)
 	{
 		tjs_int dstwidth, dstheight, dstpitch;
@@ -133,17 +133,17 @@ public:
 #ifndef USE_SSE2
 			const int sx = int(scalex*0x10000), sy = int(scaley*0x10000);
 			for (int x = clipx; x < clipx+clipw; x++) {
-				// ƒ}ƒbƒvƒŒƒCƒ„‚Ì’–Úƒhƒbƒg‚ÌuŒX‚«v‚ğ“¾‚é
-				// ÂF—v‘f‚¾‚¯‚ğg‚¤Bƒ}ƒbƒv‰æ‘œ‚ÍŠDF‚¾‚©‚ç‚±‚ê‚ÅO.K.
+				// ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤ã®æ³¨ç›®ãƒ‰ãƒƒãƒˆã®ã€Œå‚¾ãã€ã‚’å¾—ã‚‹
+				// é’è‰²è¦ç´ ã ã‘ã‚’ä½¿ã†ã€‚ãƒãƒƒãƒ—ç”»åƒã¯ç°è‰²ã ã‹ã‚‰ã“ã‚Œã§O.K.
 				int gradx = *(mapp+TJSPIXELSIZE) - *(mapp-TJSPIXELSIZE);
 				int grady = *(mapp+mappitch    ) - *(mapp-mappitch    );
 
-				// uŒX‚«v‚©‚çsrc‰æ‘œ’†‚Ì x, y ‚ğ“¾‚é
+				// ã€Œå‚¾ãã€ã‹ã‚‰srcç”»åƒä¸­ã® x, y ã‚’å¾—ã‚‹
 				int srcx = x + ((gradx*sx)>>16);
 				int srcy = y + ((grady*sy)>>16);
 
-				// src[xy]‚Ì”ÍˆÍƒ`ƒFƒbƒN‚Í‚µ‚È‚¢B‰æ‘œ‚Íc‰¡ƒ‹[ƒv‚µ‚Ä‚é‚©‚ç
-				// ’l‘‚«‚İ
+				// src[xy]ã®ç¯„å›²ãƒã‚§ãƒƒã‚¯ã¯ã—ãªã„ã€‚ç”»åƒã¯ç¸¦æ¨ªãƒ«ãƒ¼ãƒ—ã—ã¦ã‚‹ã‹ã‚‰
+				// å€¤æ›¸ãè¾¼ã¿
 				*dstp++ = *(TJSPIXEL*)(bufadr2(srcbuf, srcx, srcy, srcwidth, srcheight, srcpitch));
 				mapp += TJSPIXELSIZE;
 			}
@@ -165,7 +165,7 @@ public:
 				movd		xmm0, eax
 				movss		xmm4, xmm0
 				pshufd		xmm4, xmm4, 0x39	// PACK(0 3 2 1) = 4byte rotate right 
-													// xmm4 = clipx+3_clipx+2_clipx+1_clipx+0 ‚É‚È‚Á‚½
+													// xmm4 = clipx+3_clipx+2_clipx+1_clipx+0 ã«ãªã£ãŸ
 				mov			eax,  y
 				movd		xmm5, eax
 				pshufd		xmm5, xmm5, 0		// xmm5 = y+clipy_y+clipy_y+clipy_y+clipy
@@ -185,70 +185,70 @@ public:
 				mov			ebx, srcpitch
 				// for (int x = clipx; x < clipw; x+=4 /*++*/) {
 				mov			ecx, clipw
-				// sub			ecx, 2	‚±‚ê‚ÍŠù‚ÉÀ{Ï‚İ‚È‚Ì‚Å•s—v			// ‰E’[E¶’[‚Íˆ—‚µ‚È‚¢‚Ì‚ÅA•‚Í clipw-2
-				sar			ecx, 2				// (clipw-2)/4B4dot‚²‚Æ‚È‚Ì‚Å
+				// sub			ecx, 2	ã“ã‚Œã¯æ—¢ã«å®Ÿæ–½æ¸ˆã¿ãªã®ã§ä¸è¦			// å³ç«¯ãƒ»å·¦ç«¯ã¯å‡¦ç†ã—ãªã„ã®ã§ã€å¹…ã¯ clipw-2
+				sar			ecx, 2				// (clipw-2)/4ã€‚4dotã”ã¨ãªã®ã§
 				jz			XLOOP1_4DOT_END
 			XLOOP1:
-					// ‚È‚ñ‚Æ‚È‚­prefetch‚µ‚Æ‚­H
+					// ãªã‚“ã¨ãªãprefetchã—ã¨ãï¼Ÿ
 					// prefetchnta	[esi+32]
-					// ‚±‚Ìƒ‹[ƒv‚Ì’†‚¾‚¯Au-OP ‚ªŒø‚­‚æ‚¤‚É–½—ß‚Ì‡”Ô‚ğl‚¦‚Ä‚¢‚é
-					movdqu		xmm2, [esi-4]	// Œø—¦ˆ«‚¢‚ªmovdqu‚ğg—p
-					movdqu		xmm0, [esi+4]	// SSE2‚É‚Íƒ[ƒe[ƒg–½—ß‚È‚¢‚Ì‚Å
-					pslld		xmm0, 24		// xmm[02] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					// ã“ã®ãƒ«ãƒ¼ãƒ—ã®ä¸­ã ã‘ã€u-OP ãŒåŠ¹ãã‚ˆã†ã«å‘½ä»¤ã®é †ç•ªã‚’è€ƒãˆã¦ã„ã‚‹
+					movdqu		xmm2, [esi-4]	// åŠ¹ç‡æ‚ªã„ãŒmovdquã‚’ä½¿ç”¨
+					movdqu		xmm0, [esi+4]	// SSE2ã«ã¯ãƒ­ãƒ¼ãƒ†ãƒ¼ãƒˆå‘½ä»¤ãªã„ã®ã§
+					pslld		xmm0, 24		// xmm[02] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					pslld		xmm2, 24
-					psrld		xmm0, 24		// PMOVZXg‚¢‚½‚©‚Á‚½‚ªSSE4.1‚È‚Ì‚Å’f”O
+					psrld		xmm0, 24		// PMOVZXä½¿ã„ãŸã‹ã£ãŸãŒSSE4.1ãªã®ã§æ–­å¿µ
 					psrld		xmm2, 24
 					psubd		xmm0, xmm2		// xmm0 = (*(xpos+1) - *(xpos-1)) = diffx
-					// ‚±‚±‚Ü‚Å‚Å xmm0 ‚Í ¶‰E4byte‚ÌŒX‚«(diffx)
+					// ã“ã“ã¾ã§ã§ xmm0 ã¯ å·¦å³4byteã®å‚¾ã(diffx)
 					movd		xmm2, scalex
-					cvtdq2ps	xmm0, xmm0		// •‚“®¬”“_’l‚É•ÏŠ·
+					cvtdq2ps	xmm0, xmm0		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					pshufd		xmm2, xmm2, 0	// scalex_scalex_scalex_scalex
 					mulps		xmm0, xmm2		// *scalex
-					cvtps2dq	xmm0, xmm0		// ®”‚É–ß‚· ‚±‚ê‚Å xmm0 ‚Í (diffx*scalex)
+					cvtps2dq	xmm0, xmm0		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm0 ã¯ (diffx*scalex)
 
 					paddd		xmm0, xmm4		// xmm0 = x + (diffx*scalex)
 					pxor		xmm2, xmm2
-					pminsw		xmm0, xmm6		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ‚É‚È‚Á‚½ pmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
+					pminsw		xmm0, xmm6		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ã«ãªã£ãŸ pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
 
 					mov			eax,  mappitch
 					movdqu		xmm1, [esi+eax]	// esi+mappitch
 					neg			eax
 					movdqu		xmm2, [esi+eax]	// esi-mappitch
-					pslld		xmm1, 24		// xmm[12] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					pslld		xmm1, 24		// xmm[12] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					pslld		xmm2, 24
 					psrld		xmm1, 24
 					psrld		xmm2, 24
 					psubd		xmm1, xmm2		// xmm1 = (*(ypos+1) - *(ypos-1)) = diffy
-					// ‚±‚±‚Ü‚Å‚Å xmm1 ‚Í ã‰º4byte‚ÌŒX‚«(diffy)
+					// ã“ã“ã¾ã§ã§ xmm1 ã¯ ä¸Šä¸‹4byteã®å‚¾ã(diffy)
 
 					movd		xmm2, scaley
-					cvtdq2ps	xmm1, xmm1		// •‚“®¬”“_’l‚É•ÏŠ·
+					cvtdq2ps	xmm1, xmm1		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					pshufd		xmm2, xmm2, 0	// scaley_scaley_scaley_scaley
 					mulps		xmm1, xmm2		// *scaley
-					cvtps2dq	xmm1, xmm1		// ®”‚É–ß‚· ‚±‚ê‚Å xmm1 ‚Í (diffy*scaley)
+					cvtps2dq	xmm1, xmm1		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm1 ã¯ (diffy*scaley)
 
 					paddd		xmm1, xmm5		// xmm1 = y + (diffy*scaley)
 					pxor		xmm2, xmm2
-					pminsw		xmm1, xmm7		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ‚É‚È‚Á‚½ pmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
+					pminsw		xmm1, xmm7		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ã«ãªã£ãŸ pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
 
 					movd		xmm2, ebx		// ebx = srcpitch
 					pslld		xmm0, 2			// x*sizeof(dot)
 					pshufd		xmm2, xmm2, 0	// xmm2 = srcpitch_srcpitch_srcpitch_srcpitch
 					movdqa		xmm3, xmm1
-					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitch‚Ì‰ºˆÊ16bit 
-					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitch‚ÌãˆÊ16bit
+					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitchã®ä¸‹ä½16bit 
+					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitchã®ä¸Šä½16bit
 					pslld		xmm3, 16
-					por			xmm1, xmm3		// (y+diffy*scaley)‚àsrcpitch16bitˆÈ“à‚Ì³‚Ì®”‚È‚Ì‚Å
+					por			xmm1, xmm3		// (y+diffy*scaley)ã‚‚srcpitch16bitä»¥å†…ã®æ­£ã®æ•´æ•°ãªã®ã§
 					// xmm1 = (y+diffy*scaley)*srcpitch
 					paddd		xmm0, xmm1		// 
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 					mov			eax,  srcbuf
 					movd		xmm1, eax
 					pshufd		xmm1, xmm1, 0
 					paddd		xmm0, xmm1
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 
 					// *p = *src
 					movd		eax,  xmm0
@@ -276,72 +276,72 @@ public:
 					dec			ecx
 					jnz			XLOOP1
 			XLOOP1_4DOT_END:
-				// ‰E’[ˆ—‚ª•K—v‚©‚Ç‚¤‚©”»’f
-				mov			ecx, clipw		// ‰E’[ˆ—‚ğ’Ç‰Á
-				// sub			ecx, 2 ‚±‚ê‚ÍŠù‚ÉÀ{Ï‚İ‚È‚Ì‚Å•s—v
+				// å³ç«¯å‡¦ç†ãŒå¿…è¦ã‹ã©ã†ã‹åˆ¤æ–­
+				mov			ecx, clipw		// å³ç«¯å‡¦ç†ã‚’è¿½åŠ 
+				// sub			ecx, 2 ã“ã‚Œã¯æ—¢ã«å®Ÿæ–½æ¸ˆã¿ãªã®ã§ä¸è¦
 				and			ecx, 0x3		// ecx = (clipw-2)%4
 				jz			XLOOP1_end
 
-				// ‰E’[ˆ—‚ª•K—v‚È‚Ì‚ÅÀsBã‚Ìmovdqu‚ğmovd‚É•ÏX‚µ‚½‚¾‚¯Bƒ}ƒa‚ÅB
-				// ‘¬“x‚Í’x‚¢‚ªƒoƒO‚ª“ü‚ç‚È‚¢‚±‚Æ‚ğ—Dæ
+				// å³ç«¯å‡¦ç†ãŒå¿…è¦ãªã®ã§å®Ÿè¡Œã€‚ä¸Šã®movdquã‚’movdã«å¤‰æ›´ã—ãŸã ã‘ã€‚ãƒãƒ‚ã§ã€‚
+				// é€Ÿåº¦ã¯é…ã„ãŒãƒã‚°ãŒå…¥ã‚‰ãªã„ã“ã¨ã‚’å„ªå…ˆ
 			XLOOP1_RIGHTLOOP:
-					movd		xmm0, [esi+4]	// ‚±‚±‚Í4byte(1dot)‚Ì‚İ“]‘—
+					movd		xmm0, [esi+4]	// ã“ã“ã¯4byte(1dot)ã®ã¿è»¢é€
 					movd		xmm2, [esi-4]	// 
-					pslld		xmm0, 24		// xmm[02] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
-					psrld		xmm0, 24		// PMOVZXg‚¢‚½‚©‚Á‚½‚ªSSE4.1‚È‚Ì‚Å’f”O
+					pslld		xmm0, 24		// xmm[02] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
+					psrld		xmm0, 24		// PMOVZXä½¿ã„ãŸã‹ã£ãŸãŒSSE4.1ãªã®ã§æ–­å¿µ
 					pslld		xmm2, 24
 					psrld		xmm2, 24
 					psubd		xmm0, xmm2		// xmm0 = (*(xpos+1) - *(xpos-1)) = diffx
-					// ‚±‚±‚Ü‚Å‚Å xmm0 ‚Í ¶‰E4byte‚ÌŒX‚«(diffx)
-					cvtdq2ps	xmm0, xmm0		// •‚“®¬”“_’l‚É•ÏŠ·
+					// ã“ã“ã¾ã§ã§ xmm0 ã¯ å·¦å³4byteã®å‚¾ã(diffx)
+					cvtdq2ps	xmm0, xmm0		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					movd		xmm2, scalex
 					pshufd		xmm2, xmm2, 0	// scalex_scalex_scalex_scalex
 					mulps		xmm0, xmm2		// *scalex
-					cvtps2dq	xmm0, xmm0		// ®”‚É–ß‚· ‚±‚ê‚Å xmm0 ‚Í (diffx*scalex)
+					cvtps2dq	xmm0, xmm0		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm0 ã¯ (diffx*scalex)
 
 					paddd		xmm0, xmm4		// xmm0 = x + (diffx*scalex)
-					pminsw		xmm0, xmm6		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ‚É‚È‚Á‚½
+					pminsw		xmm0, xmm6		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ã«ãªã£ãŸ
 
 					mov			eax,  mappitch
 					movd		xmm1, [esi+eax]	// esi+mappitch
 					neg			eax
 					movd		xmm2, [esi+eax]	// esi-mappitch
-					pslld		xmm1, 24		// xmm[12] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					pslld		xmm1, 24		// xmm[12] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					psrld		xmm1, 24
 					pslld		xmm2, 24
 					psrld		xmm2, 24
 					psubd		xmm1, xmm2		// xmm1 = (*(ypos+1) - *(ypos-1)) = diffy
-					// ‚±‚±‚Ü‚Å‚Å xmm1 ‚Í ã‰º4byte‚ÌŒX‚«(diffy)
+					// ã“ã“ã¾ã§ã§ xmm1 ã¯ ä¸Šä¸‹4byteã®å‚¾ã(diffy)
 
-					cvtdq2ps	xmm1, xmm1		// •‚“®¬”“_’l‚É•ÏŠ·
+					cvtdq2ps	xmm1, xmm1		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					movd		xmm2, scaley
 					pshufd		xmm2, xmm2, 0	// scaley_scaley_scaley_scaley
 					mulps		xmm1, xmm2		// *scaley
-					cvtps2dq	xmm1, xmm1		// ®”‚É–ß‚· ‚±‚ê‚Å xmm1 ‚Í (diffy*scaley)
+					cvtps2dq	xmm1, xmm1		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm1 ã¯ (diffy*scaley)
 
 					paddd		xmm1, xmm5		// xmm1 = y + (diffy*scaley)
-					pminsw		xmm1, xmm7		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ‚É‚È‚Á‚½
+					pminsw		xmm1, xmm7		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ã«ãªã£ãŸ
 
 					pslld		xmm0, 2			// x*sizeof(dot)
 					movd		xmm2, ebx		// ebx = srcpitch
 					pshufd		xmm2, xmm2, 0	// xmm2 = srcpitch_srcpitch_srcpitch_srcpitch
 					movdqa		xmm3, xmm1
-					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitch‚Ì‰ºˆÊ16bit 
-					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitch‚ÌãˆÊ16bit
+					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitchã®ä¸‹ä½16bit 
+					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitchã®ä¸Šä½16bit
 					pslld		xmm3, 16
-					por			xmm1, xmm3		// (y+diffy*scaley)‚àsrcpitch16bitˆÈ“à‚Ì³‚Ì®”‚È‚Ì‚Å
+					por			xmm1, xmm3		// (y+diffy*scaley)ã‚‚srcpitch16bitä»¥å†…ã®æ­£ã®æ•´æ•°ãªã®ã§
 					// xmm1 = (y+diffy*scaley)*srcpitch
 					paddd		xmm0, xmm1		// 
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 					mov			eax,  srcbuf
 					movd		xmm1, eax
 					pshufd		xmm1, xmm1, 0
 					paddd		xmm0, xmm1
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 
 					// *p = *src
 					movd		eax,  xmm0
@@ -362,8 +362,8 @@ public:
 		}
 	}
 
-	// ƒ}ƒXƒN‚Ì‚ ‚éshimmer‚Ìƒ}ƒ‹ƒ`ƒXƒŒƒbƒhŠÖ”
-	// srcbuf ‚Ì‰æ‘œ‚ğ mapbuf ‚É]‚Á‚Ä‚ä‚ª‚Ü‚¹‚Â‚Â mskbuf ‚Ìƒ}ƒXƒN‚©‚¯‚È‚ª‚ç dstbuf ‚É“\‚è•t‚¯‚é
+	// ãƒã‚¹ã‚¯ã®ã‚ã‚‹shimmerã®ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰é–¢æ•°
+	// srcbuf ã®ç”»åƒã‚’ mapbuf ã«å¾“ã£ã¦ã‚†ãŒã¾ã›ã¤ã¤ mskbuf ã®ãƒã‚¹ã‚¯ã‹ã‘ãªãŒã‚‰ dstbuf ã«è²¼ã‚Šä»˜ã‘ã‚‹
 	void threadedShimmerWithMask(LPVOID params)
 	{
 		tjs_int dstwidth, dstheight, dstpitch;
@@ -394,23 +394,23 @@ public:
 			const int sx = int(scalex*0x10000), sy = int(scaley*0x10000);
 			for (int x = clipx; x < clipx+clipw; x++) {
 //				if (*mskp == 0) {
-//					// mask’l‚ª 0 ‚È‚çA‚»‚Ì‚Ü‚ÜƒRƒs[B‚±‚Ì•û‚ª‘‚¢B
-//					// ‚»‚ñ‚©‚µAmask’l‚ª 0 ‚Å‚È‚¢—Ìˆæ‚ª‘S‰æ–Ê‚¾‚ÆA20%‚­‚ç‚¢’x‚­‚È‚é
+//					// maskå€¤ãŒ 0 ãªã‚‰ã€ãã®ã¾ã¾ã‚³ãƒ”ãƒ¼ã€‚ã“ã®æ–¹ãŒæ—©ã„ã€‚
+//					// ãã‚“ã‹ã—ã€maskå€¤ãŒ 0 ã§ãªã„é ˜åŸŸãŒå…¨ç”»é¢ã ã¨ã€20%ãã‚‰ã„é…ããªã‚‹
 //					*dstp++ = *(TJSPIXEL*)srcp;
 //				} else {
 				{
-					// ƒ}ƒbƒvƒŒƒCƒ„‚Ì’–Úƒhƒbƒg‚ÌuŒX‚«v‚ğ“¾‚é
-					// ÂF—v‘f‚¾‚¯‚ğg‚¤Bƒ}ƒbƒv‰æ‘œ‚ÍŠDF‚¾‚©‚ç‚±‚ê‚ÅO.K.
+					// ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤ã®æ³¨ç›®ãƒ‰ãƒƒãƒˆã®ã€Œå‚¾ãã€ã‚’å¾—ã‚‹
+					// é’è‰²è¦ç´ ã ã‘ã‚’ä½¿ã†ã€‚ãƒãƒƒãƒ—ç”»åƒã¯ç°è‰²ã ã‹ã‚‰ã“ã‚Œã§O.K.
 					int gradx = *(mapp+TJSPIXELSIZE) - *(mapp-TJSPIXELSIZE);
 					int grady = *(mapp+mappitch ) - *(mapp-mappitch );
 
-					// ƒ}ƒXƒNƒŒƒCƒ„‚ªw’è‚³‚ê‚½‚ÍA”Z“x‚É‡‚í‚¹‚Ä‰e‹¿‰ÓŠ‚ğŒÀ’è
-					// uŒX‚«v‚©‚çsrc‰æ‘œ’†‚Ì x, y ‚ğ“¾‚é
+					// ãƒã‚¹ã‚¯ãƒ¬ã‚¤ãƒ¤ãŒæŒ‡å®šã•ã‚ŒãŸæ™‚ã¯ã€æ¿ƒåº¦ã«åˆã‚ã›ã¦å½±éŸ¿ç®‡æ‰€ã‚’é™å®š
+					// ã€Œå‚¾ãã€ã‹ã‚‰srcç”»åƒä¸­ã® x, y ã‚’å¾—ã‚‹
 					int srcx = x + ((gradx*sx*(*mskp)/255)>>16);
 					int srcy = y + ((grady*sy*(*mskp)/255)>>16);
 
-					// src[xy]‚Ì”ÍˆÍƒ`ƒFƒbƒN‚Í‚µ‚È‚¢B‰æ‘œ‚Íc‰¡ƒ‹[ƒv‚µ‚Ä‚é‚©‚ç
-					// ’l‘‚«‚İ
+					// src[xy]ã®ç¯„å›²ãƒã‚§ãƒƒã‚¯ã¯ã—ãªã„ã€‚ç”»åƒã¯ç¸¦æ¨ªãƒ«ãƒ¼ãƒ—ã—ã¦ã‚‹ã‹ã‚‰
+					// å€¤æ›¸ãè¾¼ã¿
 					*dstp++ = *(TJSPIXEL*)(bufadr2(srcbuf, srcx, srcy, srcwidth, srcheight, srcpitch));
 				}
 				mapp += TJSPIXELSIZE;
@@ -434,7 +434,7 @@ public:
 				movd		xmm0, eax
 				movss		xmm4, xmm0
 				pshufd		xmm4, xmm4, 0x39	// PACK(0 3 2 1) = 4byte rotate right 
-													// xmm4 = 3_2_1_0 ‚É‚È‚Á‚½
+													// xmm4 = 3_2_1_0 ã«ãªã£ãŸ
 				mov			eax, y
 				movd		xmm5, eax
 				pshufd		xmm5, xmm5, 0		// xmm5 = y+clipy_y+clipy_y+clipy_y+clipy
@@ -457,82 +457,82 @@ public:
 				mov			ecx, clipw
 				sar			ecx, 2	// ecx = (ecx-2)/4
 			XLOOP2:
-					// ‚±‚Ìƒ‹[ƒv‚Ì’†‚¾‚¯Au-OP ‚ªŒø‚­‚æ‚¤‚É–½—ß‚Ì‡”Ô‚ğl‚¦‚Ä‚¢‚é
-					// ‚È‚ñ‚Æ‚È‚­prefetch‚µ‚Æ‚­H
+					// ã“ã®ãƒ«ãƒ¼ãƒ—ã®ä¸­ã ã‘ã€u-OP ãŒåŠ¹ãã‚ˆã†ã«å‘½ä»¤ã®é †ç•ªã‚’è€ƒãˆã¦ã„ã‚‹
+					// ãªã‚“ã¨ãªãprefetchã—ã¨ãï¼Ÿ
 					// prefetchnta	[edx+32]
 					// prefetchnta	[esi+32]
 
-					// ‚±‚±‚©‚çƒ}ƒXƒNŒvZ
+					// ã“ã“ã‹ã‚‰ãƒã‚¹ã‚¯è¨ˆç®—
 					movdqu		xmm3, [edx]
 					mov			eax,  0x437f0000	// = (float)255.0
 					pslld		xmm3, 24
 					movd		xmm2, eax
-					psrld		xmm3, 24			// blue‚Ì‚İ”²‚«o‚µ
+					psrld		xmm3, 24			// blueã®ã¿æŠœãå‡ºã—
 					pshufd		xmm2, xmm2,0 
 					cvtdq2ps	xmm3, xmm3
 					divps		xmm3, xmm2		// xmm3 = (*mskp)/255
-					// xmm3 = mask‚ğ‚µ‚Î‚ç‚­•Û‘¶‚µ‚Ä‚¨‚­
+					// xmm3 = maskã‚’ã—ã°ã‚‰ãä¿å­˜ã—ã¦ãŠã
 
-					movdqu		xmm0, [esi+4]	// SSE2‚É‚Íƒ[ƒe[ƒg–½—ß‚È‚¢‚Ì‚Å
-					movdqu		xmm2, [esi-4]	// Œø—¦ˆ«‚¢‚ªmovqdqu‚ğg—p
-					pslld		xmm0, 24		// xmm[01] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					movdqu		xmm0, [esi+4]	// SSE2ã«ã¯ãƒ­ãƒ¼ãƒ†ãƒ¼ãƒˆå‘½ä»¤ãªã„ã®ã§
+					movdqu		xmm2, [esi-4]	// åŠ¹ç‡æ‚ªã„ãŒmovqdquã‚’ä½¿ç”¨
+					pslld		xmm0, 24		// xmm[01] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					pslld		xmm2, 24
-					psrld		xmm0, 24		// PMOVZXg‚¢‚½‚©‚Á‚½‚ªSSE4.1‚È‚Ì‚Å’f”O
+					psrld		xmm0, 24		// PMOVZXä½¿ã„ãŸã‹ã£ãŸãŒSSE4.1ãªã®ã§æ–­å¿µ
 					psrld		xmm2, 24
 					psubd		xmm0, xmm2		// xmm0 = (*(xpos+1) - *(xpos-1)) = diffx
-					// ‚±‚±‚Ü‚Å‚Å xmm0 ‚Í ¶‰E4byte‚ÌŒX‚«(diffx)
+					// ã“ã“ã¾ã§ã§ xmm0 ã¯ å·¦å³4byteã®å‚¾ã(diffx)
 					movd		xmm2, scalex
-					cvtdq2ps	xmm0, xmm0		// •‚“®¬”“_’l‚É•ÏŠ·
+					cvtdq2ps	xmm0, xmm0		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					pshufd		xmm2, xmm2, 0	// scalex_scalex_scalex_scalex
 					mulps		xmm0, xmm2		// xmm0 = diffx*scalex
-						// ƒ}ƒXƒNæZˆ—
+						// ãƒã‚¹ã‚¯ä¹—ç®—å‡¦ç†
 						mulps		xmm0, xmm3	// xmm0 = diffx*scalex*mask
-					cvtps2dq	xmm0, xmm0		// ®”‚É–ß‚· ‚±‚ê‚Å xmm0 ‚Í diffx*scalex*mask
+					cvtps2dq	xmm0, xmm0		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm0 ã¯ diffx*scalex*mask
 
 					paddd		xmm0, xmm4		// xmm0 = x + (diffx*scalex)
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pminsw		xmm0, xmm6		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ‚É‚È‚Á‚½
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pminsw		xmm0, xmm6		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ã«ãªã£ãŸ
 
 					mov			eax,  mappitch
 					movdqu		xmm1, [esi+eax]	// ebx = +mappitch
 					neg			eax
 					movdqu		xmm2, [esi+eax]	// ebx = -mappitch
-					pslld		xmm1, 24		// xmm[12] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					pslld		xmm1, 24		// xmm[12] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					pslld		xmm2, 24
 					psrld		xmm1, 24
 					psrld		xmm2, 24
 					psubd		xmm1, xmm2		// xmm1 = (*(ypos+1) - *(ypos-1)) = diffy
-					// ‚±‚±‚Ü‚Å‚Å xmm1 ‚Í ã‰º4byte‚ÌŒX‚«(diffy)
+					// ã“ã“ã¾ã§ã§ xmm1 ã¯ ä¸Šä¸‹4byteã®å‚¾ã(diffy)
 					movd		xmm2, scaley
-					cvtdq2ps	xmm1, xmm1		// •‚“®¬”“_’l‚É•ÏŠ·
+					cvtdq2ps	xmm1, xmm1		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					pshufd		xmm2, xmm2, 0	// scaley_scaley_scaley_scaley
 					mulps		xmm1, xmm2		// xmm1 = diffy*scaley
-						// ƒ}ƒXƒNæZˆ—
+						// ãƒã‚¹ã‚¯ä¹—ç®—å‡¦ç†
 						mulps		xmm1, xmm3		// xmm1 = diffy*scaley*mask
-					cvtps2dq	xmm1, xmm1		// ®”‚É–ß‚· ‚±‚ê‚Å xmm1 ‚Í diffy*scaley*mask
+					cvtps2dq	xmm1, xmm1		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm1 ã¯ diffy*scaley*mask
 
 					paddd		xmm1, xmm5		// xmm1 = y + (diffy*scaley)
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pminsw		xmm1, xmm7		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ‚É‚È‚Á‚½
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pminsw		xmm1, xmm7		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ã«ãªã£ãŸ
 
 					movd		xmm2, ebx		// ebx = srcpitch
 					pslld		xmm0, 2			// x*sizeof(dot)
 					movdqa		xmm3, xmm1
 					pshufd		xmm2, xmm2, 0	// xmm2 = srcpitch_srcpitch_srcpitch_srcpitch
-					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitch‚Ì‰ºˆÊ16bit 
-					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitch‚ÌãˆÊ16bit
+					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitchã®ä¸‹ä½16bit 
+					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitchã®ä¸Šä½16bit
 					pslld		xmm3, 16
-					por			xmm1, xmm3		// (y+diffy*scaley)‚àsrcpitch16bitˆÈ“à‚Ì³‚Ì®”‚È‚Ì‚Å
+					por			xmm1, xmm3		// (y+diffy*scaley)ã‚‚srcpitch16bitä»¥å†…ã®æ­£ã®æ•´æ•°ãªã®ã§
 					// xmm1 = (y+diffy*scaley)*srcpitch
 					paddd		xmm0, xmm1		// 
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 					mov			eax,  srcbuf
 					movd		xmm1, eax
 					pshufd		xmm1, xmm1, 0
 					paddd		xmm0, xmm1
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 
 					// *p = *src
 					movd		eax,  xmm0
@@ -561,84 +561,84 @@ public:
 					dec			ecx
 					jnz			XLOOP2
 
-				// ‰E’[ˆ—‚ª•K—v‚©‚Ç‚¤‚©”»’f
-				mov			ecx, clipw		// ‰E’[ˆ—‚ğ’Ç‰Á
+				// å³ç«¯å‡¦ç†ãŒå¿…è¦ã‹ã©ã†ã‹åˆ¤æ–­
+				mov			ecx, clipw		// å³ç«¯å‡¦ç†ã‚’è¿½åŠ 
 				and			ecx, 0x3		// ecx = (clipw-2)%4
 				jz			XLOOP2_end
 
-				// ‰E’[ˆ—‚ª•K—v‚È‚Ì‚ÅÀsBã‚Ìmovdqu‚ğmovd‚É•ÏX‚µ‚½‚¾‚¯Bƒ}ƒa‚ÅB
-				// ‘¬“x‚Í’x‚¢‚ªƒoƒO‚ª“ü‚ç‚È‚¢‚±‚Æ‚ğ—Dæ
+				// å³ç«¯å‡¦ç†ãŒå¿…è¦ãªã®ã§å®Ÿè¡Œã€‚ä¸Šã®movdquã‚’movdã«å¤‰æ›´ã—ãŸã ã‘ã€‚ãƒãƒ‚ã§ã€‚
+				// é€Ÿåº¦ã¯é…ã„ãŒãƒã‚°ãŒå…¥ã‚‰ãªã„ã“ã¨ã‚’å„ªå…ˆ
 			XLOOP2_RIGHTLOOP:
 					movd		xmm3, [edx]
 					pslld		xmm3, 24
-					psrld		xmm3, 24			// blue‚Ì‚İ”²‚«o‚µ
+					psrld		xmm3, 24			// blueã®ã¿æŠœãå‡ºã—
 					cvtdq2ps	xmm3, xmm3
 					mov			eax,  0x437f0000	// = (float)255.0
 					movd		xmm2, eax
 					pshufd		xmm2, xmm2,0 
 					divps		xmm3, xmm2		// xmm3 = (*mskp)/255
-					// xmm3 = mask‚ğ‚µ‚Î‚ç‚­•Û‘¶‚µ‚Ä‚¨‚­
+					// xmm3 = maskã‚’ã—ã°ã‚‰ãä¿å­˜ã—ã¦ãŠã
 
-					movd		xmm0, [esi+4]	// SSE2‚É‚Íƒ[ƒe[ƒg–½—ß‚È‚¢‚Ì‚Å
-					movd		xmm2, [esi-4]	// Œø—¦ˆ«‚¢‚ªmovqdqu‚ğg—p
-					pslld		xmm0, 24		// xmm[01] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
-					psrld		xmm0, 24		// PMOVZXg‚¢‚½‚©‚Á‚½‚ªSSE4.1‚È‚Ì‚Å’f”O
+					movd		xmm0, [esi+4]	// SSE2ã«ã¯ãƒ­ãƒ¼ãƒ†ãƒ¼ãƒˆå‘½ä»¤ãªã„ã®ã§
+					movd		xmm2, [esi-4]	// åŠ¹ç‡æ‚ªã„ãŒmovqdquã‚’ä½¿ç”¨
+					pslld		xmm0, 24		// xmm[01] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
+					psrld		xmm0, 24		// PMOVZXä½¿ã„ãŸã‹ã£ãŸãŒSSE4.1ãªã®ã§æ–­å¿µ
 					pslld		xmm2, 24
 					psrld		xmm2, 24
 					psubd		xmm0, xmm2		// xmm0 = (*(xpos+1) - *(xpos-1)) = diffx
-					// ‚±‚±‚Ü‚Å‚Å xmm0 ‚Í ¶‰E4byte‚ÌŒX‚«(diffx)
-					cvtdq2ps	xmm0, xmm0		// •‚“®¬”“_’l‚É•ÏŠ·
+					// ã“ã“ã¾ã§ã§ xmm0 ã¯ å·¦å³4byteã®å‚¾ã(diffx)
+					cvtdq2ps	xmm0, xmm0		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					movd		xmm2, scalex
 					pshufd		xmm2, xmm2, 0	// scalex_scalex_scalex_scalex
 					mulps		xmm0, xmm2		// xmm0 = diffx*scalex
-						// ƒ}ƒXƒNæZˆ—
+						// ãƒã‚¹ã‚¯ä¹—ç®—å‡¦ç†
 						mulps		xmm0, xmm3	// xmm0 = diffx*scalex*mask
-					cvtps2dq	xmm0, xmm0		// ®”‚É–ß‚· ‚±‚ê‚Å xmm0 ‚Í diffx*scalex*mask
+					cvtps2dq	xmm0, xmm0		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm0 ã¯ diffx*scalex*mask
 
 					paddd		xmm0, xmm4		// xmm0 = x + (diffx*scalex)
-					pminsw		xmm0, xmm6		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ‚É‚È‚Á‚½
+					pminsw		xmm0, xmm6		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pmaxsw		xmm0, xmm2		// 0 <= xmm0 <= srcwidth-1 ã«ãªã£ãŸ
 
 					mov			eax,  mappitch
 					movdqu		xmm1, [esi+eax]	// ebx = +mappitch
 					neg			eax
 					movdqu		xmm2, [esi+eax]	// ebx = -mappitch
-					pslld		xmm1, 24		// xmm[12] ‚ÌãˆÊ 24 bit ‚ğ 0 ƒNƒŠƒA
+					pslld		xmm1, 24		// xmm[12] ã®ä¸Šä½ 24 bit ã‚’ 0 ã‚¯ãƒªã‚¢
 					psrld		xmm1, 24
 					pslld		xmm2, 24
 					psrld		xmm2, 24
 					psubd		xmm1, xmm2		// xmm1 = (*(ypos+1) - *(ypos-1)) = diffy
-					// ‚±‚±‚Ü‚Å‚Å xmm1 ‚Í ã‰º4byte‚ÌŒX‚«(diffy)
-					cvtdq2ps	xmm1, xmm1		// •‚“®¬”“_’l‚É•ÏŠ·
+					// ã“ã“ã¾ã§ã§ xmm1 ã¯ ä¸Šä¸‹4byteã®å‚¾ã(diffy)
+					cvtdq2ps	xmm1, xmm1		// æµ®å‹•å°æ•°ç‚¹å€¤ã«å¤‰æ›
 					movd		xmm2, scaley
 					pshufd		xmm2, xmm2, 0	// scaley_scaley_scaley_scaley
 					mulps		xmm1, xmm2		// xmm1 = diffy*scaley
-						// ƒ}ƒXƒNæZˆ—
+						// ãƒã‚¹ã‚¯ä¹—ç®—å‡¦ç†
 						mulps		xmm1, xmm3		// xmm1 = diffy*scaley*mask
-					cvtps2dq	xmm1, xmm1		// ®”‚É–ß‚· ‚±‚ê‚Å xmm1 ‚Í diffy*scaley*mask
+					cvtps2dq	xmm1, xmm1		// æ•´æ•°ã«æˆ»ã™ ã“ã‚Œã§ xmm1 ã¯ diffy*scaley*mask
 
 					paddd		xmm1, xmm5		// xmm1 = y + (diffy*scaley)
-					pminsw		xmm1, xmm7		// pminsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åpminsw‚Å
-					pxor		xmm2, xmm2		// «‚àpmaxsd‚É‚µ‚½‚©‚Á‚½‚ªSSE4.1‚¾‚Á‚½‚Ì‚Åc
-					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ‚É‚È‚Á‚½
+					pminsw		xmm1, xmm7		// pminsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§pminswã§
+					pxor		xmm2, xmm2		// â†“ã‚‚pmaxsdã«ã—ãŸã‹ã£ãŸãŒSSE4.1ã ã£ãŸã®ã§â€¦
+					pmaxsw		xmm1, xmm2		// 0 <= xmm1 <= height-1 ã«ãªã£ãŸ
 
 					pslld		xmm0, 2			// x*sizeof(dot)
 					movd		xmm2, ebx		// ebx = srcpitch
 					pshufd		xmm2, xmm2, 0	// xmm2 = srcpitch_srcpitch_srcpitch_srcpitch
 					movdqa		xmm3, xmm1
-					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitch‚Ì‰ºˆÊ16bit 
-					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitch‚ÌãˆÊ16bit
+					pmullw		xmm1, xmm2		// xmm1 = (y+diffy*scaley)*srcpitchã®ä¸‹ä½16bit 
+					pmulhw		xmm3, xmm2		// xmm3 = (y+diffy*scaley)*srcpitchã®ä¸Šä½16bit
 					pslld		xmm3, 16
-					por			xmm1, xmm3		// (y+diffy*scaley)‚àsrcpitch16bitˆÈ“à‚Ì³‚Ì®”‚È‚Ì‚Å
+					por			xmm1, xmm3		// (y+diffy*scaley)ã‚‚srcpitch16bitä»¥å†…ã®æ­£ã®æ•´æ•°ãªã®ã§
 					// xmm1 = (y+diffy*scaley)*srcpitch
 					paddd		xmm0, xmm1		// 
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 					mov			eax,  srcbuf
 					movd		xmm1, eax
 					pshufd		xmm1, xmm1, 0
 					paddd		xmm0, xmm1
-					// ‚±‚±‚Ü‚Å‚Å xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
+					// ã“ã“ã¾ã§ã§ xmm0 = srcbuf + (y+diffy*scaley)*srcpitch + (x+diffx*scalex)*4
 
 					// *p = *src
 					movd		eax,  xmm0
@@ -661,20 +661,20 @@ public:
 	}
 	
 	/*
-	 * shimmer: ‰æ‘œ‚É‚©‚°‚ë‚¤Œø‰Ê‚ğ—^‚¦‚é
-	 * srclayer ‚Æ‚±‚ÌƒŒƒCƒ„‚Ì‘å‚«‚³‚Í“¯‚¶‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢B
-	 * maplayer ‚Í ƒNƒŠƒbƒsƒ“ƒOƒEƒBƒ“ƒhƒE‚Æ“¯‚¶‚Ü‚½‚Í‚»‚ê‚æ‚è‘å‚«‚¢ƒTƒCƒY‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
-	 * clipw/cliph ‚Í 0 ‚Ì srclayer ‚Æ“¯‚¶ƒTƒCƒY‚Æ‚İ‚È‚³‚ê‚é
-	 * @param srclayer •`‰æŒ³ƒŒƒCƒ„
-	 * @param maplayer ƒ}ƒbƒv‰æ‘œƒŒƒCƒ„(”’•‰æ‘œ)
-	 * @param msklayer ƒ}ƒXƒN‰æ‘œƒŒƒCƒ„(”’•‰æ‘œ)
-	 * @param scalex   ‚ä‚ª‚İ‚Ì‰¡•ûŒüŠg‘å—¦
-	 * @param scaley   ‚ä‚ª‚İ‚Ìc•ûŒüŠg‘å—¦
+	 * shimmer: ç”»åƒã«ã‹ã’ã‚ã†åŠ¹æœã‚’ä¸ãˆã‚‹
+	 * srclayer ã¨ã“ã®ãƒ¬ã‚¤ãƒ¤ã®å¤§ãã•ã¯åŒã˜ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„ã€‚
+	 * maplayer ã¯ ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¨åŒã˜ã¾ãŸã¯ãã‚Œã‚ˆã‚Šå¤§ãã„ã‚µã‚¤ã‚ºã§ãªã‘ã‚Œã°ãªã‚‰ãªã„
+	 * clipw/cliph ã¯ 0 ã®æ™‚ srclayer ã¨åŒã˜ã‚µã‚¤ã‚ºã¨ã¿ãªã•ã‚Œã‚‹
+	 * @param srclayer æç”»å…ƒãƒ¬ã‚¤ãƒ¤
+	 * @param maplayer ãƒãƒƒãƒ—ç”»åƒãƒ¬ã‚¤ãƒ¤(ç™½é»’ç”»åƒ)
+	 * @param msklayer ãƒã‚¹ã‚¯ç”»åƒãƒ¬ã‚¤ãƒ¤(ç™½é»’ç”»åƒ)
+	 * @param scalex   ã‚†ãŒã¿ã®æ¨ªæ–¹å‘æ‹¡å¤§ç‡
+	 * @param scaley   ã‚†ãŒã¿ã®ç¸¦æ–¹å‘æ‹¡å¤§ç‡
 	 * @param clipx/clipy/clipw/cliph
 	 */
 	void shimmer(tTJSVariant srclayer, tTJSVariant maplayer, tTJSVariant msklayer, float scalex, float scaley, int clipx, int clipy, int clipw, int cliph) {
 
-		// ‚¿‚å‚Á‚Æ‚µ‚½ŒvZ‚Ì‚‘¬‰»‚Ì‚½‚ß‚ÉA®”‰»‚µ‚Ä‚¨‚­
+		// ã¡ã‚‡ã£ã¨ã—ãŸè¨ˆç®—ã®é«˜é€ŸåŒ–ã®ãŸã‚ã«ã€æ•´æ•°åŒ–ã—ã¦ãŠã
 		const int sx = int(scalex*0x10000), sy = int(scaley*0x10000);
 
 		tjs_int srcwidth, srcheight, srcpitch;
@@ -682,19 +682,19 @@ public:
 		tjs_int mskwidth, mskheight, mskpitch;
 		BYTE *srcbuf, *mapbuf, *mskbuf;
 		{
-			// Œ³ƒŒƒCƒ„‰æ‘œî•ñ
+			// å…ƒãƒ¬ã‚¤ãƒ¤ç”»åƒæƒ…å ±
 			srcbuf    = (BYTE*)(tjs_int64)getTJSMember(srclayer, L"mainImageBuffer");
 			srcwidth  = (tjs_int)getTJSMember(srclayer, L"imageWidth");
 			srcheight = (tjs_int)getTJSMember(srclayer, L"imageHeight");
 			srcpitch  = (tjs_int)getTJSMember(srclayer, L"mainImageBufferPitch");
 
-			// ƒ}ƒbƒvƒŒƒCƒ„‰æ‘œî•ñ
+			// ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤ç”»åƒæƒ…å ±
 			mapbuf    = (BYTE*)(tjs_int64)getTJSMember(maplayer, L"mainImageBuffer");
 			mapwidth  = (tjs_int)getTJSMember(maplayer, L"imageWidth");
 			mapheight = (tjs_int)getTJSMember(maplayer, L"imageHeight");
 			mappitch  = (tjs_int)getTJSMember(maplayer, L"mainImageBufferPitch");
 
-			// ƒ}ƒXƒNƒŒƒCƒ„‰æ‘œî•ñ
+			// ãƒã‚¹ã‚¯ãƒ¬ã‚¤ãƒ¤ç”»åƒæƒ…å ±
 			if (msklayer.Type() == tvtVoid) {
 				mskbuf = NULL;
 				mskwidth = mskheight = mskpitch = 0;
@@ -706,7 +706,7 @@ public:
 			}
 		}
 
-		// ƒNƒŠƒbƒsƒ“ƒO‚ğˆ—
+		// ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°ã‚’å‡¦ç†
 		if (clipw == 0)
 			clipw = srcwidth;
 		if (cliph == 0)
@@ -722,17 +722,17 @@ public:
 		if (clipy+cliph > _height)
 			cliph = _height - clipy;
 
-		// ‰æ‘œƒTƒCƒY‚É‚¿‚å‚Á‚Æ‚µ‚½§ŒÀ‚ğ“K—p
+		// ç”»åƒã‚µã‚¤ã‚ºã«ã¡ã‚‡ã£ã¨ã—ãŸåˆ¶é™ã‚’é©ç”¨
 		if (clipw > mapwidth || cliph > mapheight ||
 			(mskbuf != NULL && (clipw > mskwidth || cliph > mskheight)))
 			return;
 
-		// ‚PƒsƒNƒZƒ‹‚²‚Æ‚Éƒ}ƒbƒvæ‚ğŒvZ
-		// x=0, x=width-1, y=0, y=height-1 ‚Ì‚Í—v“Á•Êˆµ‚¢
+		// ï¼‘ãƒ”ã‚¯ã‚»ãƒ«ã”ã¨ã«ãƒãƒƒãƒ—å…ˆã‚’è¨ˆç®—
+		// x=0, x=width-1, y=0, y=height-1 ã®æ™‚ã¯è¦ç‰¹åˆ¥æ‰±ã„
 
-		// ‚Ü‚¸‰æ–Ê‚ÌŠO‘¤‚Pƒhƒbƒg‚¾‚¯ŒvZB‚±‚±‚Íƒ}ƒbƒv‚ª“Áê‚É‚È‚é‚©‚çB
+		// ã¾ãšç”»é¢ã®å¤–å´ï¼‘ãƒ‰ãƒƒãƒˆã ã‘è¨ˆç®—ã€‚ã“ã“ã¯ãƒãƒƒãƒ—ãŒç‰¹æ®Šã«ãªã‚‹ã‹ã‚‰ã€‚
 		{
-			// Åãsˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ(‚½‚¾‚µ¶‰E1dot‚Íœ‚­)
+			// æœ€ä¸Šè¡Œä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—(ãŸã ã—å·¦å³1dotã¯é™¤ã)
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx+1/* = initial x */, clipy, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf, +0, +0, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, +2, +0, mappitch);
@@ -742,11 +742,11 @@ public:
 			int srcx, srcy;
 			for (int x = clipx+1; x < clipx+clipw-2; x++) {
 				if (msklayer.Type() == tvtVoid) {
-					// ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+					// ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 					srcx = x     + (((*mapx2-*mapx1)*sx)>>16);
 					srcy = clipy + (((*mapy2-*mapy1)*sy)>>16);
 				} else {
-					// ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+					// ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 					srcx = x     + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 					srcy = clipy + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 				}
@@ -758,7 +758,7 @@ public:
 		}
 
 		{
-			// Å‰ºsˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ(‚½‚¾‚µ¶‰E1dot‚Íœ‚­)
+			// æœ€ä¸‹è¡Œä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—(ãŸã ã—å·¦å³1dotã¯é™¤ã)
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx+1, clipy+cliph-1, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf, +0, cliph-1, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, +2, cliph-1, mappitch);
@@ -767,10 +767,10 @@ public:
 			BYTE *mskp  = bufadr(mskbuf,  1, cliph-1, mskpitch);
 			int srcx, srcy;
 			for (int x = clipx+1; x < clipx+clipw-2; x++) {
-				if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+				if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 					srcx = x             + (((*mapx2-*mapx1)*sx)>>16);
 					srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy)>>16);
-				} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+				} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 					srcx = x             + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 					srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 				}
@@ -782,7 +782,7 @@ public:
 		}
 
 		{
-			// Å¶—ñˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ(‚½‚¾‚µã‰º1dot‚Íœ‚­)
+			// æœ€å·¦åˆ—ä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—(ãŸã ã—ä¸Šä¸‹1dotã¯é™¤ã)
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx, clipy+1, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf,  0, +1, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, +1, +1, mappitch);
@@ -791,10 +791,10 @@ public:
 			BYTE *mskp  = bufadr(mskbuf,  0,  1, mskpitch);
 			int srcx, srcy;
 			for	(int y = clipy+1; y < clipy+cliph-2; y++) {
-				if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+				if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 					srcx = clipx + (((*mapx2-*mapx1)*sx)>>16);
 					srcy = y     + (((*mapy2-*mapy1)*sy)>>16);
-				} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+				} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 					srcx = clipx + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 					srcy = y     + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 				}
@@ -807,7 +807,7 @@ public:
 		}
 
 		{
-			// Å‰E—ñˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ(‚½‚¾‚µã‰º1dot‚Íœ‚­)
+			// æœ€å³åˆ—ä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—(ãŸã ã—ä¸Šä¸‹1dotã¯é™¤ã)
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx+clipw-1, clipy+1, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf, clipw-2, +1, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, clipw-1, +1, mappitch);
@@ -816,10 +816,10 @@ public:
 			BYTE *mskp  = bufadr(mskbuf, clipw-1,  1, mskpitch);
 			int srcx, srcy;
 			for (int y = clipy+1; y < clipy+cliph-2; y++) {
-				if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+				if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 					srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx)>>16);
 					srcy = y             + (((*mapy2-*mapy1)*sy)>>16);
-				} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+				} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 					srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 					srcy = y             + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 				}
@@ -832,7 +832,7 @@ public:
 		}
 
 		{
-			// ¶ãˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ
+			// å·¦ä¸Šä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx, clipy, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf,  0, +0, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, +1, +0, mappitch);
@@ -840,10 +840,10 @@ public:
 			BYTE *mapy2 = bufadr(mapbuf, +0, +1, mappitch);
 			BYTE *mskp  = bufadr(mskbuf,  0,  0, mskpitch);
 			int srcx, srcy;
-			if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+			if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 				srcx = clipx + (((*mapx2-*mapx1)*sx)>>16);
 				srcy = clipy + (((*mapy2-*mapy1)*sy)>>16);
-			} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+			} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 				srcx = clipx + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 				srcy = clipy + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 			}
@@ -851,7 +851,7 @@ public:
 		}
 
 		{
-			// ‰Eãˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ
+			// å³ä¸Šä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx+clipw-1, clipy, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf, clipw-2, +0, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, clipw-1, +0, mappitch);
@@ -859,10 +859,10 @@ public:
 			BYTE *mapy2 = bufadr(mapbuf, clipw-1, +1, mappitch);
 			BYTE *mskp  = bufadr(mskbuf, clipw-1,  0, mskpitch);
 			int srcx, srcy;
-			if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+			if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 				srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx)>>16);
 				srcy = clipy         + (((*mapy2-*mapy1)*sy)>>16);
-			} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+			} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 				srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 				srcy = clipy         + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 			}
@@ -870,7 +870,7 @@ public:
 		}
 
 		{
-			// ¶‰ºˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ
+			// å·¦ä¸‹ä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx, clipy+cliph-1, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf,  0, cliph-1, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, +1, cliph-1, mappitch);
@@ -878,10 +878,10 @@ public:
 			BYTE *mapy2 = bufadr(mapbuf, +0, cliph-1, mappitch);
 			BYTE *mskp  = bufadr(mskbuf,  0, cliph-1, mskpitch);
 			int srcx, srcy;
-			if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+			if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 				srcx = clipx         + (((*mapx2-*mapx1)*sx)>>16);
 				srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy)>>16);
-			} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+			} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 				srcx = clipx         + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 				srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 			}
@@ -889,7 +889,7 @@ public:
 		}
 
 		{
-			// ‰E‰ºˆêƒhƒbƒg‚Ìshimmer‚ğŒvZ
+			// å³ä¸‹ä¸€ãƒ‰ãƒƒãƒˆã®shimmerã‚’è¨ˆç®—
 			TJSPIXEL *dstp = (TJSPIXEL*)bufadr(_buffer, clipx+clipw-1, clipy+cliph-1, _pitch);
 			BYTE *mapx1 = bufadr(mapbuf, clipw-2, cliph-1, mappitch);
 			BYTE *mapx2 = bufadr(mapbuf, clipw-1, cliph-1, mappitch);
@@ -897,10 +897,10 @@ public:
 			BYTE *mapy2 = bufadr(mapbuf, clipw-1, cliph-1, mappitch);
 			BYTE *mskp  = bufadr(mskbuf, clipw-1, cliph-1, mskpitch);
 			int srcx, srcy;
-			if (msklayer.Type() == tvtVoid) { // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+			if (msklayer.Type() == tvtVoid) { // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 				srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx)>>16);
 				srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy)>>16);
-			} else { // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+			} else { // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 				srcx = clipx+clipw-1 + (((*mapx2-*mapx1)*sx*(*mskp)/255)>>16);
 				srcy = clipy+cliph-1 + (((*mapy2-*mapy1)*sy*(*mskp)/255)>>16);
 			}
@@ -910,9 +910,9 @@ public:
 		clipx +=1, clipw -= 2, clipy += 1, cliph -= 2;
 		if (clipw <= 0 || cliph <= 0 || clipx >= _width || clipy >= _height)
 			return;
-		// ‚±‚±‚Ü‚Å‚ÅAã‰º¶‰E‚Ì1dot‚Í‘S‚ÄshimmerÏ‚İ
+		// ã“ã“ã¾ã§ã§ã€ä¸Šä¸‹å·¦å³ã®1dotã¯å…¨ã¦shimmeræ¸ˆã¿
 
-		// ‚±‚±‚©‚çAthreadNum ŒÂ‚ÌƒXƒŒƒbƒh‚ğì‚Á‚ÄAthreadedShimmer ‚ğÀs
+		// ã“ã“ã‹ã‚‰ã€threadNum å€‹ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’ä½œã£ã¦ã€threadedShimmer ã‚’å®Ÿè¡Œ
 
 		ShimmerRect defRect = {
 			/*.dstbuf =*/ _buffer,/*.dstwidth =*/ _width,   /*.dstheight =*/ _height,   /*.dstpitch =*/ _pitch,
@@ -924,13 +924,13 @@ public:
 			/*.mapx =*/ 1, /*.mapy =*/ 1, /*.mskx = */ 1, /*.msky = */ 1
 		};
 #ifndef MULTI_THREAD
-		// ƒVƒ“ƒOƒ‹ƒXƒŒƒbƒh‚Ìê‡
-		if (msklayer.Type() == tvtVoid) // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+		// ã‚·ãƒ³ã‚°ãƒ«ã‚¹ãƒ¬ãƒƒãƒ‰ã®å ´åˆ
+		if (msklayer.Type() == tvtVoid) // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 			threadedShimmer((LPVOID)&defRect);
-		else // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+		else // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 			threadedShimmerWithMask((LPVOID)&defRect);
 #else
-		// ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh‚Ìê‡
+		// ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ã®å ´åˆ
 		tjs_int threadNum = threadPool.getThreadNum();
 		tjs_int divh = cliph/threadNum;
 		ShimmerRect rectAry[MAXTHREADNUM];
@@ -941,29 +941,29 @@ public:
 			rectAry[thread].cliph = divh;
 			rectAry[thread].mapy  = 1 + divh*thread;
 			rectAry[thread].msky  = 1 + divh*thread;
-			if (msklayer.Type() == tvtVoid) // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+			if (msklayer.Type() == tvtVoid) // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 				threadPool.run(this, &layerExShimmer::threadedShimmer, (void*)(rectAry+thread));
-			else // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+			else // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 				threadPool.run(this, &layerExShimmer::threadedShimmerWithMask, (void*)(rectAry+thread));
 		}
-		// ÅŒã‚Í’[”‚Ì‚‚³•ª‚ğ•â³‚·‚é•K—v‚ ‚è
+		// æœ€å¾Œã¯ç«¯æ•°ã®é«˜ã•åˆ†ã‚’è£œæ­£ã™ã‚‹å¿…è¦ã‚ã‚Š
 		rectAry[thread]       = defRect;
 		rectAry[thread].clipy = y;
 		rectAry[thread].cliph = cliph-divh*(threadNum-1);
 		rectAry[thread].mapy  = 1 + divh*(threadNum-1);
 		rectAry[thread].msky  = 1 + divh*(threadNum-1);
-		if (msklayer.Type() == tvtVoid) // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
-			threadedShimmer((LPVOID)(rectAry+thread));			// ÅŒã‚ÌƒXƒŒƒbƒh‚Í‚±‚¤‚µ‚½•û‚ª‘‚¢
-		else // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
-			threadedShimmerWithMask((LPVOID)(rectAry+thread));	// ÅŒã‚ÌƒXƒŒƒbƒh‚Í‚±‚¤‚µ‚½•û‚ª‘‚¢
-		// ‘S•”‚ÌƒXƒŒƒbƒh‚ªI‚í‚é‚Ü‚Å‘Ò‚Â
+		if (msklayer.Type() == tvtVoid) // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
+			threadedShimmer((LPVOID)(rectAry+thread));			// æœ€å¾Œã®ã‚¹ãƒ¬ãƒƒãƒ‰ã¯ã“ã†ã—ãŸæ–¹ãŒæ—©ã„
+		else // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
+			threadedShimmerWithMask((LPVOID)(rectAry+thread));	// æœ€å¾Œã®ã‚¹ãƒ¬ãƒƒãƒ‰ã¯ã“ã†ã—ãŸæ–¹ãŒæ—©ã„
+		// å…¨éƒ¨ã®ã‚¹ãƒ¬ãƒƒãƒ‰ãŒçµ‚ã‚ã‚‹ã¾ã§å¾…ã¤
 		threadPool.waitForAllThreads();
 #endif
 	}
 
 
 
-	// threadedShimmerBuildMap*()‚É“n‚·\‘¢‘Ì
+	// threadedShimmerBuildMap*()ã«æ¸¡ã™æ§‹é€ ä½“
 	typedef struct {
 		BYTE *dstbuf;  tjs_int dstwidth, dstheight, dstpitch;
 		BYTE *map1buf; tjs_int map1width, map1height, map1pitch;
@@ -973,7 +973,7 @@ public:
 	} ShimmerMaps;
 
 
-	// ƒ}ƒbƒv‰æ–Ê‚ğì¬‚·‚éBˆê–‡‚µ‚©ƒ}ƒbƒv‚ª‚È‚¢ê‡Bƒ^ƒCƒ‹ó‚É‚»‚ê‚ğ“\‚è•t‚¯‚é‚¾‚¯
+	// ãƒãƒƒãƒ—ç”»é¢ã‚’ä½œæˆã™ã‚‹ã€‚ä¸€æšã—ã‹ãƒãƒƒãƒ—ãŒãªã„å ´åˆã€‚ã‚¿ã‚¤ãƒ«çŠ¶ã«ãã‚Œã‚’è²¼ã‚Šä»˜ã‘ã‚‹ã ã‘
 	void threadedShimmerBuildMap(LPVOID params)
 	{
 		BYTE    *map1buf;
@@ -995,11 +995,11 @@ public:
 			}
 		}
 #else
-		int dstwidth = p->dstwidth;				// ƒ}ƒNƒ‚ç‚µ‚¢‚Ì‚Å•Ï”‚É‘ã“ü‚µ‚Æ‚­
+		int dstwidth = p->dstwidth;				// ãƒã‚¯ãƒ­ã‚‰ã—ã„ã®ã§å¤‰æ•°ã«ä»£å…¥ã—ã¨ã
 		int map1w_x4 = map1width*4;
-		int map1lw   = min(map1x, p->dstwidth);						// ¶‘¤‚Ì•`‰æ•’[”
-		int map1ccnt = max(0, (p->dstwidth - map1lw))/map1width;	// ’†‰›‚Ì•`‰æŒJ•Ô‰ñ”
-		int map1rw   = p->dstwidth - map1lw - map1ccnt*map1width;	// ‰E’[‚Ì•`‰æ•’[”
+		int map1lw   = min(map1x, p->dstwidth);						// å·¦å´ã®æç”»å¹…ç«¯æ•°
+		int map1ccnt = max(0, (p->dstwidth - map1lw))/map1width;	// ä¸­å¤®ã®æç”»ç¹°è¿”å›æ•°
+		int map1rw   = p->dstwidth - map1lw - map1ccnt*map1width;	// å³ç«¯ã®æç”»å¹…ç«¯æ•°
 //log(L"map1lw = %d, map1ccnt = %d, map1rw = %d", map1lw, map1ccnt, map1rw);
 		for (int y = p->starty; y < p->dstheight; y++) {
 			BYTE *dstp = bufadr(p->dstbuf, 0, y, p->dstpitch);
@@ -1009,17 +1009,17 @@ public:
 				mov		edi, dstp
 					
 			//BUILDMAPA_LEFT:
-				// ¶’[’[”•`‰æ
+				// å·¦ç«¯ç«¯æ•°æç”»
 				mov		ecx, map1lw
 				or		ecx, ecx
 				jz		BUILDMAPA_CENTER
 				sub		ecx, 4
 				jb		BUILDMAPA_LEFTLOOP1_NEXT
 			BUILDMAPA_LEFTLOOP1:
-				// prefetchnta	[esi+32]	// ‚Ü‚ŸƒvƒŠƒtƒFƒbƒ`‚µ‚Æ‚­
-				// Å‰A4dot’PˆÊ‚Å‘‚«‚İ
+				// prefetchnta	[esi+32]	// ã¾ããƒ—ãƒªãƒ•ã‚§ãƒƒãƒã—ã¨ã
+				// æœ€åˆã€4dotå˜ä½ã§æ›¸ãè¾¼ã¿
 				movdqu	xmm0, [esi]
-				movdqa 	[edi],xmm0		// ƒLƒƒƒbƒVƒ…‚ğ‰˜‚³‚È‚¢(movntdq)‚¾‚Æ’x‚¢
+				movdqa 	[edi],xmm0		// ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’æ±šã•ãªã„(movntdq)ã ã¨é…ã„
 				add		esi,  16
 				add		edi,  16
 				sub		ecx,  4
@@ -1030,7 +1030,7 @@ public:
 				sub		esi,  map1w_x4
 				jmp		BUILDMAPA_CENTER
 			BUILDMAPA_LEFTLOOP2:
-				// 4dot–¢–‚Ì‘‚«‚İ
+				// 4dotæœªæº€ã®æ›¸ãè¾¼ã¿
 				mov		eax,  [esi]
 				mov		[edi],eax
 				add		esi,  4
@@ -1040,16 +1040,16 @@ public:
 				sub		esi,  map1w_x4
 
 			BUILDMAPA_CENTER:
-				// ’†S‚Ì•`‰æƒ‹[ƒv
+				// ä¸­å¿ƒã®æç”»ãƒ«ãƒ¼ãƒ—
 				mov		ebx, map1ccnt;
 				or		ebx, ebx
 				jz		BUILDMAPA_RIGHT
 			BUILDMAPA_CENTERLOOP1:
 				mov		ecx, map1width
-				sar		ecx, 2		// 4dot’PˆÊ‚È‚Ì‚Å1/4‚·‚é
+				sar		ecx, 2		// 4dotå˜ä½ãªã®ã§1/4ã™ã‚‹
 			BUILDMAPA_CENTERLOOP2:
-				prefetchnta	[esi+32]	// ‚Ü‚ŸƒvƒŠƒtƒFƒbƒ`‚µ‚Æ‚­
-				// map1w‚Í4dot’PˆÊ‚È‚Ì‚Å‚à‚¤‚»‚ê‚¾‚¯‚µ‚©l‚¦‚È‚¢
+				prefetchnta	[esi+32]	// ã¾ããƒ—ãƒªãƒ•ã‚§ãƒƒãƒã—ã¨ã
+				// map1wã¯4dotå˜ä½ãªã®ã§ã‚‚ã†ãã‚Œã ã‘ã—ã‹è€ƒãˆãªã„
 				movdqu	xmm0, [esi]
 				movdqu	[edi],xmm0
 				add		esi,  16
@@ -1061,15 +1061,15 @@ public:
 				jnz		BUILDMAPA_CENTERLOOP1
 
 			BUILDMAPA_RIGHT:
-				// ‰E’[’[”•`‰æ
+				// å³ç«¯ç«¯æ•°æç”»
 				mov		ecx, map1rw
 				or		ecx, ecx
 				jz		BUILDMAPA_END
 				sub		ecx, 4
 				jb		BUILDMAPA_RIGHTLOOP1_NEXT
 			BUILDMAPA_RIGHTLOOP1:
-				prefetchnta	[esi+32]	// ‚Ü‚ŸƒvƒŠƒtƒFƒbƒ`‚µ‚Æ‚­
-				// Å‰A4dot’PˆÊ‚Å‘‚«‚İ
+				prefetchnta	[esi+32]	// ã¾ããƒ—ãƒªãƒ•ã‚§ãƒƒãƒã—ã¨ã
+				// æœ€åˆã€4dotå˜ä½ã§æ›¸ãè¾¼ã¿
 				movdqu	xmm0, [esi]
 				movdqu	[edi],xmm0
 				add		esi,  16
@@ -1080,7 +1080,7 @@ public:
 				add		ecx,  4
 				jz		BUILDMAPA_END
 			BUILDMAPA_RIGHTLOOP2:
-				// 4dot–¢–‚Ì‘‚«‚İ
+				// 4dotæœªæº€ã®æ›¸ãè¾¼ã¿
 				mov		eax,  [esi]
 				mov		[edi],eax
 				add		esi,  4
@@ -1094,7 +1094,7 @@ public:
 	}
 		
 
-	// ƒ}ƒbƒv‰æ–Ê‚ğì¬‚·‚éBƒ}ƒbƒv‚ª“ñ–‡‚ ‚éê‡B‚»‚ê‚ç‚ğ‡¬‚µ‚È‚ª‚çƒ^ƒCƒ‹ó‚É“\‚è•t‚¯‚é
+	// ãƒãƒƒãƒ—ç”»é¢ã‚’ä½œæˆã™ã‚‹ã€‚ãƒãƒƒãƒ—ãŒäºŒæšã‚ã‚‹å ´åˆã€‚ãã‚Œã‚‰ã‚’åˆæˆã—ãªãŒã‚‰ã‚¿ã‚¤ãƒ«çŠ¶ã«è²¼ã‚Šä»˜ã‘ã‚‹
 	void threadedShimmerBuildMapWithMap2(LPVOID params)
 	{
 		BYTE    *map1buf, *map2buf;
@@ -1127,14 +1127,14 @@ public:
 			}
 		}
 #else
-		int dstwidth = p->dstwidth;			// ƒ}ƒNƒ‚ç‚µ‚¢‚Ì‚Å•Ï”‚É‘ã“ü‚µ‚Æ‚­
+		int dstwidth = p->dstwidth;			// ãƒã‚¯ãƒ­ã‚‰ã—ã„ã®ã§å¤‰æ•°ã«ä»£å…¥ã—ã¨ã
 		int map1w_x4 = map1width*4;
 		int map2w_x4 = map2width*4;
-		if (map1x%4 == 0 && map2x%4 == 0) {	// 4‚ÅŠ„‚èØ‚ê‚é‚Í movdqa ‚ªg‚¦‚é
+		if (map1x%4 == 0 && map2x%4 == 0) {	// 4ã§å‰²ã‚Šåˆ‡ã‚Œã‚‹æ™‚ã¯ movdqa ãŒä½¿ãˆã‚‹
 //log(L"map1x = %d, map1w = %d, map2x = %d, map2w = %d", map1x, map1w, map2x, map2w);
 			int map1w_d4 = map1width/4, map2w_d4 = map2width/4;
-			int map1lw_d4= map1x/4;			// map1¶’[‚Ì•`‰æ•’[”
-			int map2lw_d4= map2x/4;			// map2¶’[‚Ì•`‰æ•’[”
+			int map1lw_d4= map1x/4;			// map1å·¦ç«¯ã®æç”»å¹…ç«¯æ•°
+			int map2lw_d4= map2x/4;			// map2å·¦ç«¯ã®æç”»å¹…ç«¯æ•°
 			if (map1lw_d4 == 0)
 				map1lw_d4 = map1w_d4;
 			if (map2lw_d4 == 0)
@@ -1164,15 +1164,15 @@ public:
 					cmp		ecx, eax
 					jbe		BUILDMAPC_ECX_IS_SMALLEST
 				BUILDMAPC_EAX_IS_SMALLEST:
-					sub		ebx, eax	// æ‚Éˆø‚¢‚Ä‚¨‚­
+					sub		ebx, eax	// å…ˆã«å¼•ã„ã¦ãŠã
 					sub		ecx, eax
 					inc		ecx
 				BUILDMAPC_LOOP_EAX:
 //					prefetchnta	[esi+32]
 //					prefetchnta	[edx+32]
 					movdqa	xmm0, [esi]
-					pavgb	xmm0, [edx]	// •½‹Ï’l‚ğæ‚é
-					movntdq	[edi],xmm0	// ƒLƒƒƒbƒVƒ…‚ğ‰˜‚³‚È‚¢BŒ³‚Ímovdqa‚¾‚Á‚½
+					pavgb	xmm0, [edx]	// å¹³å‡å€¤ã‚’å–ã‚‹
+					movntdq	[edi],xmm0	// ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’æ±šã•ãªã„ã€‚å…ƒã¯movdqaã ã£ãŸ
 					add		esi,  16
 					add		edx,  16
 					add		edi,  16
@@ -1193,15 +1193,15 @@ public:
 					cmp		ebx, eax
 					ja		BUILDMAPC_EAX_IS_SMALLEST
 				// BUILDMAPC_EBX_IS_SMALLEST:
-					sub		eax, ebx	// æ‚Éˆø‚¢‚Ä‚¨‚­
+					sub		eax, ebx	// å…ˆã«å¼•ã„ã¦ãŠã
 					sub		ecx, ebx
 					inc		ecx
 				BUILDMAPC_LOOP_EBX:
 //					prefetchnta	[esi+32]
 //					prefetchnta	[edx+32]
 					movdqa	xmm0, [esi]
-					pavgb	xmm0, [edx]	// •½‹Ï’l‚ğæ‚é
-					movntdq	[edi],xmm0	// ƒLƒƒƒbƒVƒ…‚ğ‰˜‚³‚È‚¢BŒ³‚Ímovdqa‚¾‚Á‚½
+					pavgb	xmm0, [edx]	// å¹³å‡å€¤ã‚’å–ã‚‹
+					movntdq	[edi],xmm0	// ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’æ±šã•ãªã„ã€‚å…ƒã¯movdqaã ã£ãŸ
 					add		esi,  16
 					add		edx,  16
 					add		edi,  16
@@ -1225,8 +1225,8 @@ public:
 //					prefetchnta	[esi+32]
 //					prefetchnta	[edx+32]
 					movdqa	xmm0, [esi]
-					pavgb	xmm0, [edx]	// •½‹Ï’l‚ğæ‚é
-					movntdq	[edi],xmm0	// ƒLƒƒƒbƒVƒ…‚ğ‰˜‚³‚È‚¢BŒ³‚Ímovdqa‚¾‚Á‚½
+					pavgb	xmm0, [edx]	// å¹³å‡å€¤ã‚’å–ã‚‹
+					movntdq	[edi],xmm0	// ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’æ±šã•ãªã„ã€‚å…ƒã¯movdqaã ã£ãŸ
 					add		esi,  16
 					add		edx,  16
 					add		edi,  16
@@ -1236,9 +1236,9 @@ public:
 				}
 			}
 		} else {
-			// 4dot ’PˆÊ‚Å‚Í‚È‚¢ê‡
-			int map1lw = min(map1x, p->dstwidth);	// map1¶’[‚Ì•`‰æ•’[”
-			int map2lw = min(map2x, p->dstwidth);	// map2¶’[‚Ì•`‰æ•’[”
+			// 4dot å˜ä½ã§ã¯ãªã„å ´åˆ
+			int map1lw = min(map1x, p->dstwidth);	// map1å·¦ç«¯ã®æç”»å¹…ç«¯æ•°
+			int map2lw = min(map2x, p->dstwidth);	// map2å·¦ç«¯ã®æç”»å¹…ç«¯æ•°
 			if (map1lw == 0)
 				map1lw = map1width;
 			if (map2lw == 0)
@@ -1264,11 +1264,11 @@ public:
 					sub		ecx, eax
 					inc		ecx
 				BUILDMAPB_LOOP_EAX:
-//					prefetchnta	[esi+32]	// ‚È‚¢•û‚ª‘‚©‚Á‚½B1160:1264‚­‚ç‚¢B
+//					prefetchnta	[esi+32]	// ãªã„æ–¹ãŒæ—©ã‹ã£ãŸã€‚1160:1264ãã‚‰ã„ã€‚
 //					prefetchnta	[edx+32]
 					movd	xmm0, [esi]
 					movd	xmm1, [edx]
-					pavgb	xmm0, xmm1	// •½‹Ï’l‚ğæ‚é
+					pavgb	xmm0, xmm1	// å¹³å‡å€¤ã‚’å–ã‚‹
 					movd	[edi],xmm0
 					add		esi,  4
 					add		edx,  4
@@ -1294,11 +1294,11 @@ public:
 					sub		ecx, ebx
 					inc		ecx
 				BUILDMAPB_LOOP_EBX:
-//					prefetchnta	[esi+32]	// ‚È‚¢•û‚ª‘‚©‚Á‚½B1160:1264‚­‚ç‚¢B
+//					prefetchnta	[esi+32]	// ãªã„æ–¹ãŒæ—©ã‹ã£ãŸã€‚1160:1264ãã‚‰ã„ã€‚
 //					prefetchnta	[edx+32]
 					movd	xmm0, [esi]
 					movd	xmm1, [edx]
-					pavgb	xmm0, xmm1	// •½‹Ï’l‚ğæ‚é
+					pavgb	xmm0, xmm1	// å¹³å‡å€¤ã‚’å–ã‚‹
 					movd	xmm1, [edx]
 					movd	[edi],xmm0
 					add		esi,  4
@@ -1325,7 +1325,7 @@ public:
 //					prefetchnta	[edx+32]
 					movd	xmm0, [esi]
 					movd	xmm1, [edx]
-					pavgb	xmm0, xmm1		// •½‹Ï’l‚ğæ‚é
+					pavgb	xmm0, xmm1		// å¹³å‡å€¤ã‚’å–ã‚‹
 					movd	[edi],xmm0
 					add		esi,  4
 					add		edx,  4
@@ -1341,14 +1341,14 @@ public:
 
 
 	/*
-	 * shimmerBuildMap:  —z‰ŠŒø‰Ê—p‚Ìƒ}ƒbƒv‰æ‘œ‚ğì¬‚·‚é
-	 * ‚í‚©‚Á‚Ä‚é‚æ‚±‚ñ‚È‚Ì‚ª‰˜‚¢•û–@‚¾‚Á‚Ä‚Ì‚Í‚³I
-	 * ‚±‚ÌƒŒƒCƒ„‚ÍAshimmer‚·‚éƒŒƒCƒ„‚Æ“¯‚¶ƒTƒCƒY‚Å‚ ‚é•K—v‚ª‚ ‚é
-	 * maplayer1 ‹y‚Ñ maplayer2 ‚ÌƒTƒCƒY‚Í”CˆÓB
-	 * @param maplayer1		Œ³ƒ}ƒbƒv‰æ‘œƒŒƒCƒ„1(”’•‰æ‘œ)
-	 * @param map1x, map1y	Œ³ƒ}ƒbƒv‰æ‘œƒŒƒCƒ„‚ÌQÆˆÊ’u
-	 * @param maplayer2		Œ³ƒ}ƒbƒv‰æ‘œƒŒƒCƒ„2(”’•‰æ‘œ)
-	 * @param map2x, map2y	Œ³ƒ}ƒbƒv‰æ‘œƒŒƒCƒ„‚ÌQÆˆÊ’u
+	 * shimmerBuildMap:  é™½ç‚åŠ¹æœç”¨ã®ãƒãƒƒãƒ—ç”»åƒã‚’ä½œæˆã™ã‚‹
+	 * ã‚ã‹ã£ã¦ã‚‹ã‚ˆã“ã‚“ãªã®ãŒæ±šã„æ–¹æ³•ã ã£ã¦ã®ã¯ã•ï¼
+	 * ã“ã®ãƒ¬ã‚¤ãƒ¤ã¯ã€shimmerã™ã‚‹ãƒ¬ã‚¤ãƒ¤ã¨åŒã˜ã‚µã‚¤ã‚ºã§ã‚ã‚‹å¿…è¦ãŒã‚ã‚‹
+	 * maplayer1 åŠã³ maplayer2 ã®ã‚µã‚¤ã‚ºã¯ä»»æ„ã€‚
+	 * @param maplayer1		å…ƒãƒãƒƒãƒ—ç”»åƒãƒ¬ã‚¤ãƒ¤1(ç™½é»’ç”»åƒ)
+	 * @param map1x, map1y	å…ƒãƒãƒƒãƒ—ç”»åƒãƒ¬ã‚¤ãƒ¤ã®å‚ç…§ä½ç½®
+	 * @param maplayer2		å…ƒãƒãƒƒãƒ—ç”»åƒãƒ¬ã‚¤ãƒ¤2(ç™½é»’ç”»åƒ)
+	 * @param map2x, map2y	å…ƒãƒãƒƒãƒ—ç”»åƒãƒ¬ã‚¤ãƒ¤ã®å‚ç…§ä½ç½®
 	 */
 	void shimmerBuildMap(tTJSVariant maplayer1, tjs_int map1x, tjs_int map1y, tTJSVariant maplayer2, tjs_int map2x, tjs_int map2y) {
 
@@ -1359,7 +1359,7 @@ public:
 		defMap.dstheight = _height;
 		defMap.dstpitch  = _pitch;
 
-		// Œ³ƒ}ƒbƒvƒŒƒCƒ„1‰æ‘œî•ñ
+		// å…ƒãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤1ç”»åƒæƒ…å ±
 		{
 			defMap.map1buf    = (BYTE*)(tjs_int64)getTJSMember(maplayer1, L"mainImageBuffer");
 			defMap.map1width  = (tjs_int)getTJSMember(maplayer1, L"imageWidth");
@@ -1373,7 +1373,7 @@ public:
 			defMap.map2buf = NULL;
 			defMap.map2width = defMap.map2height = defMap.map2pitch = defMap.map2x = defMap.map2y = 0;
 		} else {
-			// Œ³ƒ}ƒbƒvƒŒƒCƒ„1‰æ‘œî•ñ
+			// å…ƒãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤1ç”»åƒæƒ…å ±
 			defMap.map2buf    = (BYTE*)(tjs_int64)getTJSMember(maplayer2, L"mainImageBuffer");
 			defMap.map2width  = (tjs_int)getTJSMember(maplayer2, L"imageWidth");
 			defMap.map2height = (tjs_int)getTJSMember(maplayer2, L"imageHeight");
@@ -1383,15 +1383,15 @@ public:
 		}
 		defMap.starty = 0;
 
-//#ifndef MULTI_THREAD	// ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh‚É‚·‚é‚Æ’x‚©‚Á‚½‚Ì‚ÅA•K‚¸ƒVƒ“ƒOƒ‹ƒXƒŒƒbƒh‚Åˆ—‚·‚é
+//#ifndef MULTI_THREAD	// ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ã«ã™ã‚‹ã¨é…ã‹ã£ãŸã®ã§ã€å¿…ãšã‚·ãƒ³ã‚°ãƒ«ã‚¹ãƒ¬ãƒƒãƒ‰ã§å‡¦ç†ã™ã‚‹
 #if 1
-		// ƒVƒ“ƒOƒ‹ƒXƒŒƒbƒh‚Ìê‡
-		if (defMap.map2buf == NULL) // ƒ}ƒXƒN‚ª‚È‚©‚Á‚½ê‡
+		// ã‚·ãƒ³ã‚°ãƒ«ã‚¹ãƒ¬ãƒƒãƒ‰ã®å ´åˆ
+		if (defMap.map2buf == NULL) // ãƒã‚¹ã‚¯ãŒãªã‹ã£ãŸå ´åˆ
 			threadedShimmerBuildMap((LPVOID)&defMap);
-		else // ƒ}ƒXƒN‚ª‚ ‚Á‚½ê‡
+		else // ãƒã‚¹ã‚¯ãŒã‚ã£ãŸå ´åˆ
 			threadedShimmerBuildMapWithMap2((LPVOID)&defMap);
 #else
-		// ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh‚Ìê‡
+		// ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ã®å ´åˆ
 		tjs_int threadNum = threadPool.GetNumThreads();
 		tjs_int divh = defMap.dstheight/threadNum;
 		ShimmerMaps mapAry[MAXTHREADNUM];
@@ -1399,44 +1399,44 @@ public:
 		for (thread = 0, y = 0; thread < threadNum-1; thread++, y += divh) {
 			mapAry[thread]        = defMap;
 			mapAry[thread].starty = y;
-			if (defMap.map2buf == NULL) // ƒ}ƒbƒvƒŒƒCƒ„2‚ª‚È‚©‚Á‚½ê‡
+			if (defMap.map2buf == NULL) // ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤2ãŒãªã‹ã£ãŸå ´åˆ
 				threadPool.QueueRequest(this, &layerExShimmer::threadedShimmerBuildMap, (void*)(mapAry+thread));
-			else // ƒ}ƒbƒvƒŒƒCƒ„2‚ª‚ ‚Á‚½ê‡
+			else // ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤2ãŒã‚ã£ãŸå ´åˆ
 				threadPool.QueueRequest(this, &layerExShimmer::threadedShimmerBuildMapWithMap2, (void*)(mapAry+thread));
 		}
 		mapAry[thread]        = defMap;
 		mapAry[thread].starty = y;
-		if (defMap.map2buf == NULL) // ƒ}ƒbƒvƒŒƒCƒ„2‚ª‚È‚©‚Á‚½ê‡
-			threadedShimmerBuildMap((LPVOID)(mapAry+thread));			// ÅŒã‚ÌƒXƒŒƒbƒh‚Í‚±‚¤‚µ‚½•û‚ª‘‚¢
-		else // ƒ}ƒbƒvƒŒƒCƒ„2‚ª‚ ‚Á‚½ê‡
-			threadedShimmerBuildMapWithMap2((LPVOID)(mapAry+thread));	// ÅŒã‚ÌƒXƒŒƒbƒh‚Í‚±‚¤‚µ‚½•û‚ª‘‚¢
-		// ‘S•”‚ÌƒXƒŒƒbƒh‚ªI‚í‚é‚Ü‚Å‘Ò‚Â
+		if (defMap.map2buf == NULL) // ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤2ãŒãªã‹ã£ãŸå ´åˆ
+			threadedShimmerBuildMap((LPVOID)(mapAry+thread));			// æœ€å¾Œã®ã‚¹ãƒ¬ãƒƒãƒ‰ã¯ã“ã†ã—ãŸæ–¹ãŒæ—©ã„
+		else // ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤2ãŒã‚ã£ãŸå ´åˆ
+			threadedShimmerBuildMapWithMap2((LPVOID)(mapAry+thread));	// æœ€å¾Œã®ã‚¹ãƒ¬ãƒƒãƒ‰ã¯ã“ã†ã—ãŸæ–¹ãŒæ—©ã„
+		// å…¨éƒ¨ã®ã‚¹ãƒ¬ãƒƒãƒ‰ãŒçµ‚ã‚ã‚‹ã¾ã§å¾…ã¤
 		threadPool.WaitForAllThreads();
 #endif
 	}
 };
 
-// ----------------------------------- ƒNƒ‰ƒX‚Ì“o˜^
+// ----------------------------------- ã‚¯ãƒ©ã‚¹ã®ç™»éŒ²
 
 NCB_GET_INSTANCE_HOOK(layerExShimmer)
 {
-	// ƒCƒ“ƒXƒ^ƒ“ƒXƒQƒbƒ^
-	NCB_INSTANCE_GETTER(objthis) { // objthis ‚ğ iTJSDispatch2* Œ^‚Ìˆø”‚Æ‚·‚é
-		ClassT* obj = GetNativeInstance(objthis);	// ƒlƒCƒeƒBƒuƒCƒ“ƒXƒ^ƒ“ƒXƒ|ƒCƒ“ƒ^æ“¾
+	// ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚²ãƒƒã‚¿
+	NCB_INSTANCE_GETTER(objthis) { // objthis ã‚’ iTJSDispatch2* å‹ã®å¼•æ•°ã¨ã™ã‚‹
+		ClassT* obj = GetNativeInstance(objthis);	// ãƒã‚¤ãƒ†ã‚£ãƒ–ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒã‚¤ãƒ³ã‚¿å–å¾—
 		if (!obj) {
-			obj = new ClassT(objthis);				// ‚È‚¢ê‡‚Í¶¬‚·‚é
-			SetNativeInstance(objthis, obj);		// objthis ‚É obj ‚ğƒlƒCƒeƒBƒuƒCƒ“ƒXƒ^ƒ“ƒX‚Æ‚µ‚Ä“o˜^‚·‚é
+			obj = new ClassT(objthis);				// ãªã„å ´åˆã¯ç”Ÿæˆã™ã‚‹
+			SetNativeInstance(objthis, obj);		// objthis ã« obj ã‚’ãƒã‚¤ãƒ†ã‚£ãƒ–ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã¨ã—ã¦ç™»éŒ²ã™ã‚‹
 		}
 		obj->reset();
 		return obj;
 	}
-	// ƒfƒXƒgƒ‰ƒNƒ^iÀÛ‚Ìƒƒ\ƒbƒh‚ªŒÄ‚Î‚ê‚½Œã‚ÉŒÄ‚Î‚ê‚éj
+	// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ï¼ˆå®Ÿéš›ã®ãƒ¡ã‚½ãƒƒãƒ‰ãŒå‘¼ã°ã‚ŒãŸå¾Œã«å‘¼ã°ã‚Œã‚‹ï¼‰
 	~NCB_GET_INSTANCE_HOOK_CLASS () {
 	}
 };
 
 
-// ƒtƒbƒN‚Â‚«ƒAƒ^ƒbƒ`
+// ãƒ•ãƒƒã‚¯ã¤ãã‚¢ã‚¿ãƒƒãƒ
 NCB_ATTACH_CLASS_WITH_HOOK(layerExShimmer, Layer) {
 	NCB_METHOD(shimmer);
 	NCB_METHOD(shimmerBuildMap);

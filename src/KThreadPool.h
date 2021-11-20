@@ -4,52 +4,52 @@
 
 typedef enum { RUNNING, SUSPENDED } KThreadStatus;
 
-// ‚P‚Â‚ÌƒXƒŒƒbƒh‚Ìî•ñ‚ğ•Û‚·‚éƒNƒ‰ƒX
+// ï¼‘ã¤ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã®æƒ…å ±ã‚’ä¿æŒã™ã‚‹ã‚¯ãƒ©ã‚¹
 template <class T>
 class KThread {
-	HANDLE		  handle;			// ƒXƒŒƒbƒhƒnƒ“ƒhƒ‰
-	volatile KThreadStatus stat;		// ƒXƒe[ƒ^ƒX(volatile‚Å‘‚«•Ï‚¦‚ç‚ê‚é‚±‚Æ‚É’ˆÓ)
-	T             *instancep;	// run()‚Åinstance->funcp(argp)‚·‚é‚½‚ß‚ÌƒCƒ“ƒXƒ^ƒ“ƒX
-	void (T::*funcp)(void*);	// ƒXƒŒƒbƒh’†‚ÅÀs‚·‚éŠÖ”
-	void*		   argp;		// ƒXƒŒƒbƒh’†‚ÅÀs‚·‚éŠÖ”‚É“n‚·ˆø”
+	HANDLE		  handle;			// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒãƒ³ãƒ‰ãƒ©
+	volatile KThreadStatus stat;		// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹(volatileã§æ›¸ãå¤‰ãˆã‚‰ã‚Œã‚‹ã“ã¨ã«æ³¨æ„)
+	T             *instancep;	// run()ã§instance->funcp(argp)ã™ã‚‹ãŸã‚ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹
+	void (T::*funcp)(void*);	// ã‚¹ãƒ¬ãƒƒãƒ‰ä¸­ã§å®Ÿè¡Œã™ã‚‹é–¢æ•°
+	void*		   argp;		// ã‚¹ãƒ¬ãƒƒãƒ‰ä¸­ã§å®Ÿè¡Œã™ã‚‹é–¢æ•°ã«æ¸¡ã™å¼•æ•°
 public:
-	KThread(void);		// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
-	~KThread();						// ƒfƒXƒgƒ‰ƒNƒ^
-									// ƒXƒŒƒbƒhƒ‹[ƒv(static‚Å‚ ‚é•K—v‚ ‚è)
+	KThread(void);		// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	~KThread();						// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+									// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ«ãƒ¼ãƒ—(staticã§ã‚ã‚‹å¿…è¦ã‚ã‚Š)
 	static DWORD WINAPI threadLoop(void*);
-									// ƒNƒ‰ƒXT‚ÌŠÖ”func‚ğˆø”arg‚Åˆ—ŠJn‚·‚é
+									// ã‚¯ãƒ©ã‚¹Tã®é–¢æ•°funcã‚’å¼•æ•°argã§å‡¦ç†é–‹å§‹ã™ã‚‹
 	bool run(T *instance, void (T::*funcp)(void*), void *argp, int interval=0);
-	bool isRunning()				// “®ì’†‚©‚Ç‚¤‚©
+	bool isRunning()				// å‹•ä½œä¸­ã‹ã©ã†ã‹
 	{
 		return stat == RUNNING;
 	}
-	void wait(int interval=0)		// ƒXƒŒƒbƒh‚Ìˆ—Š®—¹‚ğ‘Ò‚Â
+	void wait(int interval=0)		// ã‚¹ãƒ¬ãƒƒãƒ‰ã®å‡¦ç†å®Œäº†ã‚’å¾…ã¤
 	{
 		while(isRunning())
 			Sleep(interval);
 	}
 };
 
-// KThreadƒNƒ‰ƒX‚ÌƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// KThreadã‚¯ãƒ©ã‚¹ã®ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 template <class T>
 KThread<T>::KThread(/*long *runningsp*/)
 {
 	handle = CreateThread(NULL, 0, threadLoop, this, 0, NULL);
 }
 
-// KThreadƒNƒ‰ƒX‚ÌƒfƒXƒgƒ‰ƒNƒ^
+// KThreadã‚¯ãƒ©ã‚¹ã®ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 template <class T>
 KThread<T>::~KThread()
 {
-	TerminateThread(handle, 0);	// –³—–î—I‚í‚ç‚¹‚éB“‚¢B
+	TerminateThread(handle, 0);	// ç„¡ç†çŸ¢ç†çµ‚ã‚ã‚‰ã›ã‚‹ã€‚é…·ã„ã€‚
 }
 
-// KThreadƒNƒ‰ƒX‚ÌƒXƒŒƒbƒhƒ‹[ƒv(static ‚Å‚ ‚é•K—v‚ ‚è)
-// ‚±‚±‚¾‚¯‚ÍƒXƒŒƒbƒh‚»‚Ì‚à‚Ì‚ª‰ñ‚Á‚Ä‚¢‚é
+// KThreadã‚¯ãƒ©ã‚¹ã®ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ«ãƒ¼ãƒ—(static ã§ã‚ã‚‹å¿…è¦ã‚ã‚Š)
+// ã“ã“ã ã‘ã¯ã‚¹ãƒ¬ãƒƒãƒ‰ãã®ã‚‚ã®ãŒå›ã£ã¦ã„ã‚‹
 template <class T>
 DWORD WINAPI KThread<T>::threadLoop(void *p)
 {
-	// Å‰CreateThread()‚³‚ê‚é‚Æ‚«‚Írunningó‘Ô‚È‚Ì‚Å‚±‚ê‚Å‚æ‚¢
+	// æœ€åˆCreateThread()ã•ã‚Œã‚‹ã¨ãã¯runningçŠ¶æ…‹ãªã®ã§ã“ã‚Œã§ã‚ˆã„
 	KThread<T> *kthread = (KThread<T>*)p;
 	while (1) {
 		kthread->stat = SUSPENDED;
@@ -58,7 +58,7 @@ DWORD WINAPI KThread<T>::threadLoop(void *p)
 	}
 }
 
-// ƒNƒ‰ƒXT‚ÌŠÖ”func‚ğˆø”arg‚Åˆ—ŠJn‚·‚é
+// ã‚¯ãƒ©ã‚¹Tã®é–¢æ•°funcã‚’å¼•æ•°argã§å‡¦ç†é–‹å§‹ã™ã‚‹
 template <class T>
 bool KThread<T>::run(T *instance, void (T::*funcp)(void*), void *argp, int interval=0)
 {
@@ -76,22 +76,22 @@ bool KThread<T>::run(T *instance, void (T::*funcp)(void*), void *argp, int inter
 
 // --------------------------------------------------------------------
 
-// ƒXƒŒƒbƒhƒv[ƒ‹ƒNƒ‰ƒX
+// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«ã‚¯ãƒ©ã‚¹
 template <class T>
 class KThreadPool {
-	int			threadnum;					// Œ»İ‚ÌƒXƒŒƒbƒh”
-	KThread<T>	*threadary[MAXKTHREADNUM-1];// ƒXƒŒƒbƒh”z—ñ
+	int			threadnum;					// ç¾åœ¨ã®ã‚¹ãƒ¬ãƒƒãƒ‰æ•°
+	KThread<T>	*threadary[MAXKTHREADNUM-1];// ã‚¹ãƒ¬ãƒƒãƒ‰é…åˆ—
 public:
-	KThreadPool(int cpunum=0);				// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
-	~KThreadPool();							// ƒfƒXƒgƒ‰ƒNƒ^
-	void setThreadNum(int num=0);			// ƒXƒŒƒbƒh”‚ğİ’è‚·‚é
-	int getThreadNum(void);					// ƒXƒŒƒbƒh”‚ğ“¾‚é
-	void waitForAllThreads(int interval=0);	// ‘SƒXƒŒƒbƒh‚Ìˆ—Š®—¹‚ğ‘Ò‚Â
-											// ƒNƒ‰ƒXT‚ÌŠÖ”func‚ğarg‚ÅƒXƒŒƒbƒh‚É‚Äˆ—ŠJn‚·‚é
+	KThreadPool(int cpunum=0);				// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	~KThreadPool();							// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	void setThreadNum(int num=0);			// ã‚¹ãƒ¬ãƒƒãƒ‰æ•°ã‚’è¨­å®šã™ã‚‹
+	int getThreadNum(void);					// ã‚¹ãƒ¬ãƒƒãƒ‰æ•°ã‚’å¾—ã‚‹
+	void waitForAllThreads(int interval=0);	// å…¨ã‚¹ãƒ¬ãƒƒãƒ‰ã®å‡¦ç†å®Œäº†ã‚’å¾…ã¤
+											// ã‚¯ãƒ©ã‚¹Tã®é–¢æ•°funcã‚’argã§ã‚¹ãƒ¬ãƒƒãƒ‰ã«ã¦å‡¦ç†é–‹å§‹ã™ã‚‹
 	void run(T *instancep, void (T::*funcp)(void*), void *argp);
 };
 
-// KThreadPool ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// KThreadPool ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 template <class T>
 KThreadPool<T>::KThreadPool(int cpunum=0)
 {
@@ -99,13 +99,13 @@ KThreadPool<T>::KThreadPool(int cpunum=0)
 	setThreadNum(cpunum);
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 template <class T>
 KThreadPool<T>::~KThreadPool()
 {
 }
 
-// ƒXƒŒƒbƒh”‚ğİ’è‚·‚éBnum=0‚È‚çCPUƒXƒŒƒbƒh”-1‚ğİ’è‚·‚é
+// ã‚¹ãƒ¬ãƒƒãƒ‰æ•°ã‚’è¨­å®šã™ã‚‹ã€‚num=0ãªã‚‰CPUã‚¹ãƒ¬ãƒƒãƒ‰æ•°-1ã‚’è¨­å®šã™ã‚‹
 template <class T>
 void KThreadPool<T>::setThreadNum(int num=0)
 {
@@ -114,25 +114,25 @@ void KThreadPool<T>::setThreadNum(int num=0)
 		GetSystemInfo(&sysinfo);
 		num = sysinfo.dwNumberOfProcessors;
 	}
-	int newthreadnum = min(MAXKTHREADNUM-1, num-1); // -1 ‚Í©•ª‚ğŠÜ‚Ş‚½‚ß
+	int newthreadnum = min(MAXKTHREADNUM-1, num-1); // -1 ã¯è‡ªåˆ†ã‚’å«ã‚€ãŸã‚
 	if (newthreadnum < 0)
-		newthreadnum = 0; // ©•ª‚ğœ‚­‚Ì‚Å0‚Í‚ ‚è‚¤‚é
+		newthreadnum = 0; // è‡ªåˆ†ã‚’é™¤ãã®ã§0ã¯ã‚ã‚Šã†ã‚‹
 
 	if (threadnum < newthreadnum) {
-		// ƒXƒŒƒbƒhƒv[ƒ‹’†‚ÌƒXƒŒƒbƒh‚ğ‘‰Á‚³‚¹‚é
+		// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«ä¸­ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’å¢—åŠ ã•ã›ã‚‹
 		for (int i = threadnum; i < newthreadnum; i++)
 			threadary[i] = new KThread<T>();
 	} else if (threadnum > newthreadnum) {
-		// ƒXƒŒƒbƒhƒv[ƒ‹’†‚ÌƒXƒŒƒbƒh‚ğŒ¸­‚³‚¹‚é
+		// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«ä¸­ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’æ¸›å°‘ã•ã›ã‚‹
 		for (int i = newthreadnum-1; i >= threadnum; i--) {
-			threadary[i]->wait();	// ‚»‚ÌƒXƒŒƒbƒh‚ªsuspend‚·‚é‚Ì‚ğ‘Ò‚Á‚Ä‚©‚ç
-			delete threadary[i];	// ƒXƒŒƒbƒhíœ
+			threadary[i]->wait();	// ãã®ã‚¹ãƒ¬ãƒƒãƒ‰ãŒsuspendã™ã‚‹ã®ã‚’å¾…ã£ã¦ã‹ã‚‰
+			delete threadary[i];	// ã‚¹ãƒ¬ãƒƒãƒ‰å‰Šé™¤
 		}
 	}
 	threadnum = newthreadnum;
 }
 
-// ƒXƒŒƒbƒh”‚ğ“¾‚é
+// ã‚¹ãƒ¬ãƒƒãƒ‰æ•°ã‚’å¾—ã‚‹
 template <class T>
 int KThreadPool<T>::getThreadNum(void)
 {
@@ -140,7 +140,7 @@ int KThreadPool<T>::getThreadNum(void)
 }
 
 
-// ‘SƒXƒŒƒbƒh‚Ìˆ—Š®—¹‚ğ‘Ò‚Â
+// å…¨ã‚¹ãƒ¬ãƒƒãƒ‰ã®å‡¦ç†å®Œäº†ã‚’å¾…ã¤
 template <class T>
 void KThreadPool<T>::waitForAllThreads(int interval=0)
 {
@@ -148,13 +148,13 @@ void KThreadPool<T>::waitForAllThreads(int interval=0)
 		threadary[i]->wait(interval);
 }
 
-// ƒNƒ‰ƒXT‚ÌŠÖ”func‚ğˆø”arg‚ÅƒXƒŒƒbƒh‚É‚Äˆ—ŠJn‚·‚é
+// ã‚¯ãƒ©ã‚¹Tã®é–¢æ•°funcã‚’å¼•æ•°argã§ã‚¹ãƒ¬ãƒƒãƒ‰ã«ã¦å‡¦ç†é–‹å§‹ã™ã‚‹
 template <class T>
 void KThreadPool<T>::run(T *instancep, void (T::*funcp)(void*), void *argp)
 {
 	for (int i = 0; i < threadnum; i++)
 		if (threadary[i]->run(instancep, funcp, argp))
 			return;
-	// ‹ó‚«‚ª‚È‚©‚Á‚½‚ç©•ª‚ÅÀs‚·‚é
+	// ç©ºããŒãªã‹ã£ãŸã‚‰è‡ªåˆ†ã§å®Ÿè¡Œã™ã‚‹
 	(instancep->*funcp)(argp);
 }

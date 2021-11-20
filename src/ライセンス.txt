@@ -1,15 +1,15 @@
-���C�Z���X�F
-	�ȉ���URL�́u�v���O�C���̍쐬�v�ɂ��ƁA�v���O�C���̍쐬�ł�
-	�g���g���̃\�[�X�R�[�h�𗘗p���Ă��Ă��g���g���̃��C�Z���X��
-	�]���K�v�͂Ȃ��炵���B
+ライセンス：
+	以下のURLの「プラグインの作成」によると、プラグインの作成では
+	吉里吉里のソースコードを利用していても吉里吉里のライセンスに
+	従う必要はないらしい。
 	http://kikyou.info/extractor/?arc=tvp%2Ffiles%2Fkr2_230r2.lzh&file=license.txt&ct=text%2Fplain%3B%20charset%3DShift_JIS
-	�̂ŁA��ɂ���� WTFPL�A�u�D���Ɏg���A�Ĕz�z�E�������R�A�J���E�g�p�\���E
-	�񍐋`���Ȃ��A���p���pO.K.�v�Ƃ����������\�����Ƃ��B�݂�ȍD����
-	�g���������������ł���H
+	ので、例によって WTFPL、「好きに使え、再配布・改造自由、開示・使用表示・
+	報告義務なし、商用利用O.K.」というユルいソレしとく。みんな好きに
+	使えた方が嬉しいでしょ？
 
-	������L�F�����قȂ�ꍇ�A�g���g���̃��C�Z���X�ɏ]���K�v������̂ŁA
-	�e���K�X�ɁB��y�͎���̂��̂̃��C�Z���X�ɂ͓ڒ��Ȃ��̂ŁA�K�X�B
+	もし上記認識が異なる場合、吉里吉里のライセンスに従う必要があるので、
+	各自適宜に。我輩は自作のもののライセンスには頓着ないので、適宜。
 
-	�ŁA�z�z�ɍۂ��āA�J�������f�B���N�g���\�����̂܂ܔz�邱�Ƃ�
-	���C�Z���X��\���ǂ����킩��Ȃ��̂ŁAmain.cpp������Еz����
-	����킯�ŁB�����烉�C�Z���X���ǂ��Ƃ����Č����Ȃ񂾁c(����������)�B
+	で、配布に際して、開発したディレクトリ構成そのまま配ることが
+	ライセンス上可能かどうかわかんないので、main.cppだけを頒布して
+	いるわけで。だからライセンスがどうとかって嫌いなんだ…(頭悪いだけ)。

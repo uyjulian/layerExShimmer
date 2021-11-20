@@ -19,7 +19,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName",       "KAICHO Soft"
-            VALUE "FileDescription",   "layerExShimmer.dll, for �g���g��2"
+            VALUE "FileDescription",   "layerExShimmer.dll, for 吉里吉里2"
             VALUE "FileVersion",       "0, 3, 1, 0\0"
 //            VALUE "InternalName",    "layerExShimmer\0"
             VALUE "LegalCopyright",    "Copyright (C) 2011,2012 KAICHO\0"
@@ -36,12 +36,12 @@ END
 
 Version up history
 
-0.3.1.0		CThreadPool�x�[�X�������̂�KThreadPool�֕ύX�B
-		WaitForSingleObject()�̂�����Sleep(0)�łɂ��āA�X���b�h�؂�
-		�ւ����������B�����̂��B
-0.3.0.0		�ŊO�g1�̌v�Z���A��������͂ݏo�Ȃ��͈͂Ŏ��{����悤�ɏC��
-		�}���`�X���b�h��
-0.2.1.0		4dot�����̗̈��������悤�C��
-0.2.0.0		�ŏ��̃����[�X
+0.3.1.0		CThreadPoolベースだったのをKThreadPoolへ変更。
+		WaitForSingleObject()のかわりにSleep(0)でにして、スレッド切り
+		替えを高速化。いいのか。
+0.3.0.0		最外枠1の計算を、そこからはみ出ない範囲で実施するように修正
+		マルチスレッド化
+0.2.1.0		4dot未満の領域を扱えるよう修正
+0.2.0.0		最初のリリース
 
 */
