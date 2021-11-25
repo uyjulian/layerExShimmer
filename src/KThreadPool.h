@@ -60,7 +60,7 @@ DWORD WINAPI KThread<T>::threadLoop(void *p)
 
 // クラスTの関数funcを引数argで処理開始する
 template <class T>
-bool KThread<T>::run(T *instance, void (T::*funcp)(void*), void *argp, int interval=0)
+bool KThread<T>::run(T *instance, void (T::*funcp)(void*), void *argp, int interval)
 {
 	if (isRunning())
 		return false;
@@ -93,7 +93,7 @@ public:
 
 // KThreadPool コンストラクタ
 template <class T>
-KThreadPool<T>::KThreadPool(int cpunum=0)
+KThreadPool<T>::KThreadPool(int cpunum)
 {
 	threadnum = 0;
 	setThreadNum(cpunum);
@@ -107,7 +107,7 @@ KThreadPool<T>::~KThreadPool()
 
 // スレッド数を設定する。num=0ならCPUスレッド数-1を設定する
 template <class T>
-void KThreadPool<T>::setThreadNum(int num=0)
+void KThreadPool<T>::setThreadNum(int num)
 {
 	if (num == 0) {
 		SYSTEM_INFO sysinfo;
@@ -142,7 +142,7 @@ int KThreadPool<T>::getThreadNum(void)
 
 // 全スレッドの処理完了を待つ
 template <class T>
-void KThreadPool<T>::waitForAllThreads(int interval=0)
+void KThreadPool<T>::waitForAllThreads(int interval)
 {
 	for (int i = 0; i < threadnum; i++)
 		threadary[i]->wait(interval);
