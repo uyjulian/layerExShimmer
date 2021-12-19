@@ -19,7 +19,7 @@ typedef DWORD TJSPIXEL;
 /**
  * ログ出力用
  */
-#if 1
+#if 0
 static void log(const tjs_char *format, ...)
 {
 #if 0
